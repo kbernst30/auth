@@ -82,6 +82,7 @@ public class OAuth2AuthorizationService {
         return authorizationCode;
     }
 
+    @Transactional
     public OAuth2TokenResponse getTokenResponseForImplicitGrant(int accountId, String email, String clientId,
                                                                 Set<String> requestedScopes) throws AuthorizationException {
 
@@ -162,7 +163,7 @@ public class OAuth2AuthorizationService {
         oAuth2TokenResponse.setAccessToken(accessToken);
         oAuth2TokenResponse.setRefreshToken(refreshToken);
         oAuth2TokenResponse.setExpiryTime(TOKEN_EXPIRY_TIME_SECONDS);
-        oAuth2TokenResponse.setTokenType("bearer"); // TODO figure out if there is another type
+        oAuth2TokenResponse.setTokenType("bearer");
         oAuth2TokenResponse.setScope(scopes.isEmpty() ? null : String.join(" ", scopes));
         return oAuth2TokenResponse;
     }

@@ -25,4 +25,18 @@ public class OAuth2TokenResponse {
     @JsonProperty("refresh_token")
     @Getter @Setter private String refreshToken;
 
+    public String getAsUriFragment() {
+        StringBuilder builder = new StringBuilder()
+                .append("access_token=").append(accessToken)
+                .append("&expires_in=").append(expiryTime)
+                .append("&token_type=").append(tokenType)
+                .append("&scope=").append(scope);
+
+        if (refreshToken != null) {
+            builder.append("&refresh_token=").append(refreshToken);
+        }
+
+        return builder.toString();
+    }
+
 }

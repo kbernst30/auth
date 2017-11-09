@@ -111,10 +111,16 @@ public class OAuth2AuthorizationResource {
 
     private Response getOauth2AuthorizationTokenResponse(OAuth2AuthorizationRequest oAuth2AuthorizationRequest) throws AuthorizationException {
         Set<String> requestedScopes = getRequestedScopes(oAuth2AuthorizationRequest.getScope());
+
+        // todo this should use session info
         OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForImplicitGrant(1, "test@test.com",
                 oAuth2AuthorizationRequest.getClientId(), requestedScopes);
 
-        System.out.println(oAuth2TokenResponse);
-        return Response.ok().build();
+        URI requestedUri = URI.create(oAuth2AuthorizationRequest.getRedirectUri());
+        URI resolvedRedirectUri = UriBuilder.fromUri(requestedUri)
+                .fragment(oAuth2TokenResponse.getAsUriFragment())
+                .build();
+
+        return Response.temporaryRedirect(resolvedRedirectUri).build();
     }
 }

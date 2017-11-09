@@ -25,6 +25,7 @@ public class AppKeyConfig implements Serializable {
     @Column(nullable = false, name = "name")
     @Getter @Setter private String name;
 
+    @Lob
     @Column(nullable = false, name = "value")
     @Getter @Setter private String value;
 }

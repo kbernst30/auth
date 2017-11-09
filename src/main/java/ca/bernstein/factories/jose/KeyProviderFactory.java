@@ -1,5 +1,6 @@
 package ca.bernstein.factories.jose;
 
+import ca.bernstein.exceptions.authorization.SigningKeyException;
 import ca.bernstein.models.jose.JwsAlgorithmType;
 import ca.bernstein.models.jose.KeyConfigName;
 import ca.bernstein.models.jpa.AppKey;
@@ -7,12 +8,20 @@ import ca.bernstein.models.jpa.AppKeyConfig;
 import ca.bernstein.services.jose.HmacSecretKeyProvider;
 import ca.bernstein.services.jose.KeyProvider;
 import ca.bernstein.services.jose.RsaKeyProvider;
+import ca.bernstein.util.KeyUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 
 /**
  * Constructs an appropriate key provider based on the algorithm used by the key
  */
+@Slf4j
 public class KeyProviderFactory {
 
     /**
@@ -51,8 +60,21 @@ public class KeyProviderFactory {
         boolean isActive = Boolean.parseBoolean(getConfigValueByName(appKeyConfigs, KeyConfigName.ACTIVE));
         boolean isPassive = Boolean.parseBoolean(getConfigValueByName(appKeyConfigs, KeyConfigName.PASSIVE));
 
-        // TODO get the keys from the value in config
-        return new RsaKeyProvider(null, null, isActive, isPassive);
+        PrivateKey privateKey = null;
+        PublicKey publicKey = null;
+
+        try {
+            privateKey = KeyUtils.getPrivateKeyFromString(getConfigValueByName(appKeyConfigs, KeyConfigName.PRIVATE_KEY));
+            if (!StringUtils.isEmpty(getConfigValueByName(appKeyConfigs, KeyConfigName.PUBLIC_KEY))) {
+                publicKey = KeyUtils.getPublicKeyFromString(getConfigValueByName(appKeyConfigs, KeyConfigName.PUBLIC_KEY));
+            } else {
+                publicKey = KeyUtils.getPublicKeyFromPrivateKey(privateKey);
+            }
+        } catch (SigningKeyException e) {
+            log.warn("Failed to get private or public key... RSA signing of tokens using this key will likely fail.", e);
+        }
+
+        return new RsaKeyProvider((RSAPublicKey) publicKey, (RSAPrivateKey) privateKey, isActive, isPassive);
     }
 
     private String getConfigValueByName(List<AppKeyConfig> appKeyConfigs, KeyConfigName keyConfigName) {
