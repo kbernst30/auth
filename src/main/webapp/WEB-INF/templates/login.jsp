@@ -13,12 +13,13 @@
             <div class="platform-login-inner">
 
                 <div class="platform-login-header"></div>
-                <c:if test = "${it.errorDescription != null}">
-                    <div class="platform-login-error">${it.errorDescription}</div>
+                <c:if test = "${it.error != null}">
+                    <div class="platform-login-error">${it.error}</div>
                 </c:if>
                 <form name="form" id="login-form" action="/auth/login" method="POST" class="platform-login-form">
                     <input type="text" name="username" value="" placeholder="Username" id="username" />
                     <input type="password" name="password" placeholder="Password" id="password" />
+                    <input type="hidden" name="returnTo" id="returnTo" value='${it.returnTo}' />
                     <input type="hidden" name="fb_access_token" id="fb_access_token" />
                     <input type="submit" id="login" value="Login" class="btn btn-primary" />
                 </form>

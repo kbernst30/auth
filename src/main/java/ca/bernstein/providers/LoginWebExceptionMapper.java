@@ -1,6 +1,7 @@
 package ca.bernstein.providers;
 
 import ca.bernstein.exceptions.web.LoginWebException;
+import ca.bernstein.models.authentication.LoginPageConfig;
 import org.glassfish.jersey.server.mvc.Viewable;
 
 import javax.ws.rs.core.MediaType;
@@ -17,8 +18,18 @@ public class LoginWebExceptionMapper implements ExceptionMapper<LoginWebExceptio
     @Override
     public Response toResponse(LoginWebException e) {
         return Response.fromResponse(e.getResponse())
-                .entity(new Viewable("/login.jsp", e.getError()))
+                .entity(new Viewable("/login.jsp", getLoginPageConfigForResponse(e)))
                 .type(MediaType.TEXT_HTML)
                 .build();
+    }
+
+    private LoginPageConfig getLoginPageConfigForResponse(LoginWebException e) {
+        LoginPageConfig loginPageConfig = e.getLoginPageConfig();
+        if (loginPageConfig == null) {
+            loginPageConfig = new LoginPageConfig();
+        }
+
+        loginPageConfig.setError(e.getError() != null ? e.getError().getErrorDescription() : null);
+        return loginPageConfig;
     }
 }

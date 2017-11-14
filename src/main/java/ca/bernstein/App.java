@@ -7,7 +7,6 @@ import ca.bernstein.factories.hk2.JpaConfigurationFactory;
 import ca.bernstein.factories.jose.JwsAlgorithmFactory;
 import ca.bernstein.factories.jose.KeyProviderFactory;
 import ca.bernstein.filters.AuthenticationFilter;
-import ca.bernstein.models.jpa.Account;
 import ca.bernstein.models.jpa.AllowedScope;
 import ca.bernstein.persistence.*;
 import ca.bernstein.persistence.hibernate.HibernateDao;
@@ -61,7 +60,7 @@ public class App extends ResourceConfig {
                 // Data Layer - TODO use different JPA or perhaps none at all based on config
                 bind(HibernateSessionProvider.class).to(HibernateSessionProvider.class).in(Singleton.class);
                 bind(HibernateDao.class).to(JpaEntityDao.class).in(Singleton.class);
-                bind(AccountDao.class).to(Account.class).in(Singleton.class);
+                bind(AccountDao.class).to(AccountDao.class).in(Singleton.class);
                 bind(AllowedScope.class).to(AllowedScope.class).in(Singleton.class);
                 bind(AppKeyDao.class).to(AppKeyDao.class).in(Singleton.class);
                 bind(PlatformClientDao.class).to(PlatformClientDao.class).in(Singleton.class);

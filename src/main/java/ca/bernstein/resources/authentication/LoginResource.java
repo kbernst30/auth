@@ -4,6 +4,7 @@ import ca.bernstein.exceptions.authentication.AuthenticationException;
 import ca.bernstein.exceptions.authentication.InvalidCredentialsException;
 import ca.bernstein.exceptions.authentication.UnknownAccountException;
 import ca.bernstein.exceptions.web.LoginWebException;
+import ca.bernstein.models.authentication.LoginPageConfig;
 import ca.bernstein.models.authentication.LoginRequest;
 import ca.bernstein.models.error.ErrorType;
 import ca.bernstein.services.authentication.AuthenticationService;
@@ -40,8 +41,8 @@ public class LoginResource {
      */
     @GET
     @Produces(MediaType.TEXT_HTML)
-    public Viewable getLoginForm() {
-        return new Viewable("/login.jsp");
+    public Viewable getLoginForm(@QueryParam("returnTo") String returnTo) {
+        return new Viewable("/login.jsp", getLoginPageConfigFromParams(returnTo));
     }
 
     /**
@@ -62,25 +63,41 @@ public class LoginResource {
                 return Response.ok().build();
             }
 
-            return Response.temporaryRedirect(returnTo).build();
+            return Response.seeOther(returnTo).build();
         } catch (UnknownAccountException e) {
             log.error("No account was found for email [{}]", loginRequest.getUsername(), e);
             throw new LoginWebException(ErrorType.Authentication.UNKNOWN_ACCOUNT, Response.Status.BAD_REQUEST,
-                    loginRequest.getUsername());
+                    getLoginPageConfigFromLoginRequest(loginRequest), loginRequest.getUsername());
+
         } catch (InvalidCredentialsException e) {
             log.error("Invalid credentials given for email [{}]", loginRequest.getUsername(), e);
-            throw new LoginWebException(ErrorType.Authentication.INVALID_CREDENTIALS, Response.Status.BAD_REQUEST);
+            throw new LoginWebException(ErrorType.Authentication.INVALID_CREDENTIALS, Response.Status.BAD_REQUEST,
+                    getLoginPageConfigFromLoginRequest(loginRequest));
+
         } catch (AuthenticationException e) {
             log.error("An unknown error occurred attempting authentication for email [{}]", loginRequest.getUsername(), e);
-            throw new LoginWebException(ErrorType.Authentication.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR);
+            throw new LoginWebException(ErrorType.Authentication.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR,
+                    getLoginPageConfigFromLoginRequest(loginRequest));
         }
     }
 
     private URI getReturnToUri(String returnTo) {
         try {
-            return new URI(returnTo);
+            return StringUtils.isEmpty(returnTo) || returnTo.equals("null") ? null : new URI(returnTo);
         } catch (URISyntaxException e) {
             return null;
         }
+    }
+
+    private LoginPageConfig getLoginPageConfigFromParams(String returnTo) {
+        LoginPageConfig loginPageConfig = new LoginPageConfig();
+        loginPageConfig.setReturnTo(returnTo);
+        return loginPageConfig;
+    }
+
+    private LoginPageConfig getLoginPageConfigFromLoginRequest(LoginRequest loginRequest) {
+        LoginPageConfig loginPageConfig = new LoginPageConfig();
+        loginPageConfig.setReturnTo(loginRequest.getReturnTo());
+        return loginPageConfig;
     }
 }
