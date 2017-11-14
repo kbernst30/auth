@@ -1,0 +1,107 @@
+html, body {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.platform-login {
+
+    height: 100%;
+    width: 100%;
+
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+
+    justify-content: center;
+    -webkit-justify-content: center;
+
+    align-items: center;
+    -webkit-align-items: center;
+}
+
+.platform-login .platform-login-inner {
+    background: white;
+    border-radius: 5px;
+    width: 400px;
+    text-align: center;
+
+    padding: 20px 50px;
+
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.platform-login .platform-login-inner .platform-login-header {
+    font-size: 20px;
+    font-weight: 600;
+    width: 174px;
+    height: 30px;
+    /*background-size: 174px 30px;*/
+    /*background-image: url('../img/banner.png');*/
+    /*background-repeat: no-repeat;*/
+    margin: 0 auto;
+}
+
+.platform-login-error {
+    margin: 10px 0 0;
+    color: red;
+    font-style: italic;
+}
+
+.platform-login .platform-login-inner .platform-login-form {
+    margin-top: 20px;
+}
+
+.platform-login .platform-login-inner input[type="text"],
+.platform-login .platform-login-inner input[type="password"] {
+    width: 100%;
+    border: none;
+    background: #E5E5E5;
+    padding: 10px 12px;
+    display: block;
+    margin: 15px 0;
+    font-size: 14px;
+
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+
+    font-weight: 400;
+}
+
+.platform-login .platform-login-inner input[type="text"]:focus,
+.platform-login .platform-login-inner input[type="password"]:focus {
+    outline: none;
+}
+
+.platform-login .platform-login-inner input[type="submit"] {
+    border: none;
+    background: #51B8BE;
+    color: white;
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.platform-login .platform-login-inner input[type="submit"]:hover {
+    background: #389FA5;
+}
+.platform-login .platform-login-inner input[type="submit"]:focus {
+    outline: none;
+}
+
+.platform-login-divider {
+    margin: 15px 0;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.platform-social-login {
+    margin-bottom: 10px;
+}
+.platform-social-login .abcRioButtonContents {
+    font-size: 16px !important;
+}

@@ -26,7 +26,7 @@ public class ErrorResponse implements Serializable {
 
     public ErrorResponse() {}
 
-    public ErrorResponse(ErrorType.OAuth2 errorType, String... arguments) {
+    public ErrorResponse(ErrorType.AbstractError errorType, String... arguments) {
         this.error = errorType.getError();
         this.errorDescription = String.format(errorType.getMessage(), arguments);
     }

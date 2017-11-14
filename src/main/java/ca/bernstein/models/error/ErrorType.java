@@ -1,5 +1,6 @@
 package ca.bernstein.models.error;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
@@ -7,7 +8,8 @@ import lombok.Getter;
  */
 public final class ErrorType {
 
-    public enum OAuth2 {
+    @AllArgsConstructor
+    public enum OAuth2 implements AbstractError {
         GRANT_TYPE_NOT_ALLOWED("unauthorized_client", "Client [%s] is not authorized to request authorization of type [%s]"),
         MISSING_CLIENT_ID("invalid_request", "a valid client_id must be provided"),
         MISSING_REDIRECT_URI("invalid_request", "a valid redirect_uri must be provided"),
@@ -21,10 +23,23 @@ public final class ErrorType {
 
         @Getter private final String error;
         @Getter private final String message;
-
-        OAuth2(String error, String message) {
-            this.error = error;
-            this.message = message;
-        }
     }
+
+    @AllArgsConstructor
+    public enum Authentication implements AbstractError {
+
+        MISSING_CREDENTIALS("missing_credentials", "You must specify username and password."),
+        INVALID_CREDENTIALS("invalid_credentials", "Username or password was incorrect. Please double check your credentials."),
+        SERVER_ERROR("server_error", "An unknown error occurred"),
+        UNKNOWN_ACCOUNT("unknown_account", "No user was found for email %s.");
+
+        @Getter private final String error;
+        @Getter private final String message;
+    }
+
+    public interface AbstractError {
+        String getError();
+        String getMessage();
+    }
+
 }

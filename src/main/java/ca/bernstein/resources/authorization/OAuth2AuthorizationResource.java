@@ -1,6 +1,7 @@
 package ca.bernstein.resources.authorization;
 
-import ca.bernstein.exceptions.OAuth2WebException;
+import ca.bernstein.annotation.AuthenticationRequired;
+import ca.bernstein.exceptions.web.OAuth2WebException;
 import ca.bernstein.exceptions.authorization.AuthorizationException;
 import ca.bernstein.exceptions.authorization.InvalidScopeException;
 import ca.bernstein.exceptions.authorization.UnauthorizedClientException;
@@ -16,10 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -51,8 +54,9 @@ public class OAuth2AuthorizationResource {
      */
     @GET
     @Path("/authorize")
+    @AuthenticationRequired
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getOauth2Authorization(@BeanParam OAuth2AuthorizationRequest oAuth2AuthorizationRequest) {
+    public Response getOauth2Authorization(@BeanParam OAuth2AuthorizationRequest oAuth2AuthorizationRequest, @Context HttpSession httpSession) {
 
         Validations.validateOAuth2AuthorizationRequest(oAuth2AuthorizationRequest);
 

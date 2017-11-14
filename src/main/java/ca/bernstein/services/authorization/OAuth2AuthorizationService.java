@@ -38,6 +38,7 @@ public class OAuth2AuthorizationService {
     private final PlatformClientDao platformClientDao;
     private final ScopeDao scopeDao;
     private final TokenService tokenService;
+
     private final Cache<String, String> authCodeCache;
     private final Cache<String, Set<String>> authScopeCache;
 

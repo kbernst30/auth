@@ -1,6 +1,8 @@
 package ca.bernstein.util;
 
-import ca.bernstein.exceptions.OAuth2WebException;
+import ca.bernstein.exceptions.web.LoginWebException;
+import ca.bernstein.exceptions.web.OAuth2WebException;
+import ca.bernstein.models.authentication.LoginRequest;
 import ca.bernstein.models.error.ErrorType;
 import ca.bernstein.models.oauth.OAuth2AuthorizationRequest;
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +29,12 @@ public final class Validations {
 
         if (StringUtils.isEmpty(oAuth2AuthorizationRequest.getClientId())) {
             throw new OAuth2WebException(ErrorType.OAuth2.MISSING_CLIENT_ID, Response.Status.BAD_REQUEST);
+        }
+    }
+
+    public static void validateLoginRequest(LoginRequest loginRequest) {
+        if (loginRequest == null || StringUtils.isEmpty(loginRequest.getUsername()) || StringUtils.isEmpty(loginRequest.getPassword())) {
+            throw new LoginWebException(ErrorType.Authentication.MISSING_CREDENTIALS, Response.Status.BAD_REQUEST);
         }
     }
 
