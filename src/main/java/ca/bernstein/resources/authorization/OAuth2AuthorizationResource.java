@@ -65,7 +65,7 @@ public class OAuth2AuthorizationResource {
             if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.CODE) {
                 return getOAuth2AuthorizationCodeResponse(oAuth2AuthorizationRequest, authenticatedUser);
             } else if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.TOKEN) {
-                return getOauth2AuthorizationTokenResponse(oAuth2AuthorizationRequest);
+                return getOauth2AuthorizationTokenResponse(oAuth2AuthorizationRequest, authenticatedUser);
             }
 
             // We should never get here as validations would've ensured response type value
@@ -117,12 +117,12 @@ public class OAuth2AuthorizationResource {
         return Response.temporaryRedirect(resolvedRedirectUri).build();
     }
 
-    private Response getOauth2AuthorizationTokenResponse(OAuth2AuthorizationRequest oAuth2AuthorizationRequest) throws AuthorizationException {
-        Set<String> requestedScopes = getRequestedScopes(oAuth2AuthorizationRequest.getScope());
+    private Response getOauth2AuthorizationTokenResponse(OAuth2AuthorizationRequest oAuth2AuthorizationRequest,
+                                                         AuthenticatedUser authenticatedUser) throws AuthorizationException {
 
-        // todo this should use session info
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForImplicitGrant(1, "test@test.com",
-                oAuth2AuthorizationRequest.getClientId(), requestedScopes);
+        Set<String> requestedScopes = getRequestedScopes(oAuth2AuthorizationRequest.getScope());
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForImplicitGrant(oAuth2AuthorizationRequest.getClientId(),
+                requestedScopes, authenticatedUser);
 
         URI requestedUri = URI.create(oAuth2AuthorizationRequest.getRedirectUri());
         URI resolvedRedirectUri = UriBuilder.fromUri(requestedUri)

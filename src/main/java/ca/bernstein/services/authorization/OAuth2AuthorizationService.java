@@ -92,8 +92,8 @@ public class OAuth2AuthorizationService {
     }
 
     @Transactional
-    public OAuth2TokenResponse getTokenResponseForImplicitGrant(int accountId, String email, String clientId,
-                                                                Set<String> requestedScopes) throws AuthorizationException {
+    public OAuth2TokenResponse getTokenResponseForImplicitGrant(String clientId, Set<String> requestedScopes,
+                                                                AuthenticatedUser authenticatedUser) throws AuthorizationException {
 
         PlatformClient client = getPlatformClientFromClientId(clientId);
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.IMPLICIT)) {
@@ -104,8 +104,8 @@ public class OAuth2AuthorizationService {
         Set<String> resolvedScopes = getResolvedClientScope(client, requestedScopes);
 
         Map<String, String> tokenClaims = new HashMap<>();
-        tokenClaims.put("email", email);
-        tokenClaims.put("account_id", String.valueOf(accountId));
+        tokenClaims.put("username", authenticatedUser.getUsername());
+        tokenClaims.put("account_id", String.valueOf(authenticatedUser.getUserId()));
 
         String token;
         try {
