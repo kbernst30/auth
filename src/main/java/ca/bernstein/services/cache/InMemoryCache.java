@@ -5,7 +5,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class InMemoryCache<K, V> implements Cache<K, V> {
 
@@ -38,12 +40,25 @@ public class InMemoryCache<K, V> implements Cache<K, V> {
     }
 
     @Override
+    public boolean has(K key) {
+        return get(key) != null;
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public V evict(K key) {
         CacheKey cacheKey = new CacheKey(key);
         CacheValue cacheValue = cache.getIfPresent(cacheKey);
         cache.invalidate(cacheKey);
         return cacheValue != null ? (V) cacheValue.getValue() : null;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<V> values() {
+        return (List<V>) cache.asMap().values().stream()
+                .map(CacheValue::getValue)
+                .collect(Collectors.toList());
     }
 
     @AllArgsConstructor

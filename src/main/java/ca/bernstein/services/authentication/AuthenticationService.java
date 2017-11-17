@@ -5,7 +5,7 @@ import ca.bernstein.exceptions.authentication.InvalidCredentialsException;
 import ca.bernstein.exceptions.authentication.UnknownAccountException;
 import ca.bernstein.exceptions.jpa.JpaExecutionException;
 import ca.bernstein.models.authentication.LoginRequest;
-import ca.bernstein.models.authentication.User;
+import ca.bernstein.models.authentication.AuthenticatedUser;
 import ca.bernstein.models.jpa.Account;
 import ca.bernstein.persistence.AccountDao;
 import ca.bernstein.util.AuthenticationUtils;
@@ -46,8 +46,8 @@ public class AuthenticationService {
         }
 
         // Set new session attributes
-        User user = new User(account.getId(), account.getEmail());
-        httpSession.setAttribute(AuthenticationUtils.AUTHENTICATED_USER, user);
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(account.getId(), account.getEmail());
+        httpSession.setAttribute(AuthenticationUtils.AUTHENTICATED_USER, authenticatedUser);
     }
 
     private Account getAccountByEmail(String email) throws AuthenticationException {

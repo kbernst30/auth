@@ -5,7 +5,7 @@ import lombok.*;
 @ToString
 @EqualsAndHashCode
 @AllArgsConstructor
-public class User {
+public class AuthenticatedUser {
 
     @Getter @Setter private int userId;
     @Getter @Setter private String username;

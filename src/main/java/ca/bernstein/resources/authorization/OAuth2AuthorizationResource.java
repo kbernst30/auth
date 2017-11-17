@@ -6,6 +6,7 @@ import ca.bernstein.exceptions.authorization.AuthorizationException;
 import ca.bernstein.exceptions.authorization.InvalidScopeException;
 import ca.bernstein.exceptions.authorization.UnauthorizedClientException;
 import ca.bernstein.exceptions.authorization.UnknownClientException;
+import ca.bernstein.models.authentication.AuthenticatedUser;
 import ca.bernstein.models.error.ErrorType;
 import ca.bernstein.models.oauth.OAuth2AuthorizationRequest;
 import ca.bernstein.models.oauth.OAuth2GrantType;
@@ -17,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpSession;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -56,13 +56,14 @@ public class OAuth2AuthorizationResource {
     @Path("/authorize")
     @AuthenticationRequired
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getOauth2Authorization(@BeanParam OAuth2AuthorizationRequest oAuth2AuthorizationRequest, @Context HttpSession httpSession) {
+    public Response getOauth2Authorization(@BeanParam OAuth2AuthorizationRequest oAuth2AuthorizationRequest,
+                                           @Context AuthenticatedUser authenticatedUser) {
 
         Validations.validateOAuth2AuthorizationRequest(oAuth2AuthorizationRequest);
 
         try {
             if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.CODE) {
-                return getOAuth2AuthorizationCodeResponse(oAuth2AuthorizationRequest);
+                return getOAuth2AuthorizationCodeResponse(oAuth2AuthorizationRequest, authenticatedUser);
             } else if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.TOKEN) {
                 return getOauth2AuthorizationTokenResponse(oAuth2AuthorizationRequest);
             }
@@ -101,9 +102,12 @@ public class OAuth2AuthorizationResource {
         return requestedScopes;
     }
 
-    private Response getOAuth2AuthorizationCodeResponse(OAuth2AuthorizationRequest oAuth2AuthorizationRequest) throws AuthorizationException {
+    private Response getOAuth2AuthorizationCodeResponse(OAuth2AuthorizationRequest oAuth2AuthorizationRequest,
+                                                        AuthenticatedUser authenticatedUser) throws AuthorizationException {
+
         Set<String> requestedScopes = getRequestedScopes(oAuth2AuthorizationRequest.getScope());
-        String code = authorizationService.generateAuthorizationCode(oAuth2AuthorizationRequest.getClientId(), requestedScopes);
+        String code = authorizationService.generateAuthorizationCode(oAuth2AuthorizationRequest.getClientId(),
+                requestedScopes, authenticatedUser);
 
         URI requestedUri = URI.create(oAuth2AuthorizationRequest.getRedirectUri());
         URI resolvedRedirectUri = UriBuilder.fromUri(requestedUri)

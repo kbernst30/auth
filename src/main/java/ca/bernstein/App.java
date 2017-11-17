@@ -1,12 +1,14 @@
 package ca.bernstein;
 
 import ca.bernstein.configuration.JpaConfiguration;
+import ca.bernstein.factories.hk2.AuthenticatedUserFactory;
 import ca.bernstein.factories.hk2.ConfigurationProviderFactory;
 import ca.bernstein.factories.hk2.HttpSessionFactory;
 import ca.bernstein.factories.hk2.JpaConfigurationFactory;
 import ca.bernstein.factories.jose.JwsAlgorithmFactory;
 import ca.bernstein.factories.jose.KeyProviderFactory;
 import ca.bernstein.filters.AuthenticationFilter;
+import ca.bernstein.models.authentication.AuthenticatedUser;
 import ca.bernstein.models.jpa.AllowedScope;
 import ca.bernstein.persistence.*;
 import ca.bernstein.persistence.hibernate.HibernateDao;
@@ -77,6 +79,7 @@ public class App extends ResourceConfig {
                 bind(OAuth2AuthorizationService.class).to(OAuth2AuthorizationService.class).in(Singleton.class);
 
                 // Sessions
+                bindFactory(AuthenticatedUserFactory.class).to(AuthenticatedUser.class);
                 bindFactory(HttpSessionFactory.class).to(HttpSession.class);
             }
         });

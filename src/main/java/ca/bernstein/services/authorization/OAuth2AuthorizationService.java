@@ -2,8 +2,10 @@ package ca.bernstein.services.authorization;
 
 import ca.bernstein.exceptions.authorization.*;
 import ca.bernstein.exceptions.jpa.JpaExecutionException;
+import ca.bernstein.models.authentication.AuthenticatedUser;
 import ca.bernstein.models.jpa.AllowedScope;
 import ca.bernstein.models.jpa.PlatformClient;
+import ca.bernstein.models.oauth.OAuth2AuthCode;
 import ca.bernstein.models.oauth.OAuth2GrantType;
 import ca.bernstein.models.oauth.OAuth2TokenResponse;
 import ca.bernstein.persistence.PlatformClientDao;
@@ -18,10 +20,7 @@ import org.apache.commons.text.RandomStringGenerator;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,15 +31,16 @@ import static org.apache.commons.text.CharacterPredicates.LETTERS;
 @Slf4j
 public class OAuth2AuthorizationService {
 
-    private static final int AUTH_CODE_LENGTH = 6;
+    private static final int AUTH_CODE_LENGTH = 20;
     private static final int TOKEN_EXPIRY_TIME_SECONDS = 3600;
 
     private final PlatformClientDao platformClientDao;
     private final ScopeDao scopeDao;
     private final TokenService tokenService;
 
-    private final Cache<String, String> authCodeCache;
-    private final Cache<String, Set<String>> authScopeCache;
+    private final RandomStringGenerator authCodeGenerator;
+    private final Cache<String, OAuth2AuthCode> authCodeCache;
+
 
     @Inject
     public OAuth2AuthorizationService(PlatformClientDao platformClientDao, ScopeDao scopeDao, TokenService tokenService) {
@@ -48,17 +48,18 @@ public class OAuth2AuthorizationService {
         this.scopeDao = scopeDao;
         this.tokenService = tokenService;
 
-        this.authCodeCache = CacheBuilder.createBuilder()
-            .withExpiryTime(10, TimeUnit.MINUTES)
-            .build();
+        this.authCodeGenerator  = new RandomStringGenerator.Builder()
+                .withinRange('0', 'z')
+                .filteredBy(LETTERS, DIGITS)
+                .build();
 
-        this.authScopeCache = CacheBuilder.createBuilder()
+        this.authCodeCache = CacheBuilder.createBuilder()
             .withExpiryTime(10, TimeUnit.MINUTES)
             .build();
     }
 
     @Transactional
-    public String generateAuthorizationCode(String clientId, Set<String> requestedScopes) throws AuthorizationException {
+    public String generateAuthorizationCode(String clientId, Set<String> requestedScopes, AuthenticatedUser authenticatedUser) throws AuthorizationException {
 
         PlatformClient client = getPlatformClientFromClientId(clientId);
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.AUTHORIZATION_CODE)) {
@@ -68,19 +69,26 @@ public class OAuth2AuthorizationService {
 
         Set<String> resolvedScopes = getResolvedClientScope(client, requestedScopes);
 
-        String authorizationCode = authCodeCache.get(getAuthCodeCacheKey(clientId));
-        if (authorizationCode == null) {
-            RandomStringGenerator generator = new RandomStringGenerator.Builder()
-                    .withinRange('0', 'z')
-                    .filteredBy(LETTERS, DIGITS)
-                    .build();
+        // We will add synchronization code here. Although the cache implementation might be thread safe (as is the case
+        // for the current in memory implementation using Guava Cache), we cannot guarantee that every implementation will
+        // be so. The synchronized block will add additional safety
+        OAuth2AuthCode oAuth2AuthCode = getAuthCodeForClientAndUser(clientId, authenticatedUser);
+        if (oAuth2AuthCode == null) {
+            synchronized (authCodeCache) {
+                oAuth2AuthCode = getAuthCodeForClientAndUser(clientId, authenticatedUser);
+                if (oAuth2AuthCode == null) {
+                    String authorizationCodeStr = authCodeGenerator.generate(AUTH_CODE_LENGTH);
+                    while (authCodeCache.has(authorizationCodeStr)) {
+                        authorizationCodeStr = authCodeGenerator.generate(AUTH_CODE_LENGTH);
+                    }
 
-            authorizationCode = generator.generate(AUTH_CODE_LENGTH);
-            authCodeCache.set(getAuthCodeCacheKey(clientId), authorizationCode);
-            authScopeCache.set(getAuthScopeCacheKey(clientId), resolvedScopes);
+                    oAuth2AuthCode = new OAuth2AuthCode(authorizationCodeStr, clientId, resolvedScopes, authenticatedUser);
+                    authCodeCache.set(authorizationCodeStr, oAuth2AuthCode);
+                }
+            }
         }
 
-        return authorizationCode;
+        return oAuth2AuthCode.getCode();
     }
 
     @Transactional
@@ -155,6 +163,13 @@ public class OAuth2AuthorizationService {
         return requestedScopes;
     }
 
+    private OAuth2AuthCode getAuthCodeForClientAndUser(String clientId, AuthenticatedUser authenticatedUser) {
+        return authCodeCache.values().stream()
+                .filter(code -> Objects.equals(code.getClientId(), clientId) && Objects.equals(code.getAuthenticatedUser(), authenticatedUser))
+                .findFirst()
+                .orElse(null);
+    }
+
     private OAuth2TokenResponse createOauth2TokenResponse(String accessToken, Set<String> scopes) {
         return createOauth2TokenResponse(accessToken, null, scopes);
     }
@@ -167,13 +182,5 @@ public class OAuth2AuthorizationService {
         oAuth2TokenResponse.setTokenType("bearer");
         oAuth2TokenResponse.setScope(scopes.isEmpty() ? null : String.join(" ", scopes));
         return oAuth2TokenResponse;
-    }
-
-    private String getAuthCodeCacheKey(String clientId) {
-        return String.format("%s:authorizationCode", clientId);
-    }
-
-    private String getAuthScopeCacheKey(String clientId) {
-        return String.format("%s:scope", clientId);
     }
 }
