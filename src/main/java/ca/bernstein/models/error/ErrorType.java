@@ -19,6 +19,7 @@ public final class ErrorType {
         INVALID_GRANT("invalid_grant", "The requested grant_type is not supported"),
         INVALID_IMPLICIT_GRANT("invalid_grant", "Implicit grant_type cannot be used in this way"),
         INVALID_PARAMETER("invalid_request", "%s was invalid or otherwise malformed"),
+        INVALID_REFRESH_TOKEN("invalid_request", "Refresh token was either invalid or expired"),
         INVALID_SCOPE("invalid_scope", "Requested scope was invalid for client_id [%s]: %s"),
         REDIRECT_URI_HAS_FRAGMENT("invalid_request", "redirect_uri must not contain fragments"),
         SERVER_ERROR("server_error", "An unknown error occurred"),

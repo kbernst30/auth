@@ -32,4 +32,12 @@ public interface TokenService {
      * @return true if the token is valid, false otherwise
      */
     boolean isTokenValid(String token);
+
+    /**
+     * Gets the value associated with the given token claim, or null if not defined
+     * @param token the token to check the claim for
+     * @param claim the claim to look up
+     * @return a value representing the token claim, or null if claim does not exist
+     */
+    String getTokenClaim(String token, String claim);
 }

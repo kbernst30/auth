@@ -185,8 +185,40 @@ public class OAuth2AuthorizationService {
         }
 
         String token = createAccessToken(client.getClientId(), authenticatedUser, resolvedScopes);
-        String refreshToken = createRefreshToken(token);
+        String refreshToken = null;
+        if (client.getAuthorizedGrantTypes().contains(OAuth2GrantType.REFRESH_TOKEN)) {
+            refreshToken = createRefreshToken(token);
+        }
+
         return createOauth2TokenResponse(token, refreshToken, resolvedScopes);
+    }
+
+    public OAuth2TokenResponse getTokenResponseForRefreshTokenGrant(BasicAuthorizationDetails authorizationDetails, String refreshToken) {
+        String clientId = authorizationDetails.getClientId();
+        PlatformClient client = getPlatformClientFromClientId(clientId);
+        verifyClientAuthorizationValidity(authorizationDetails, client);
+
+        if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.REFRESH_TOKEN)) {
+            throw new UnauthorizedClientException(String.format("Client [%s] is not authorized to request a " +
+                    "token using refresh_token grant.", clientId), clientId, OAuth2GrantType.REFRESH_TOKEN.name().toLowerCase());
+        }
+
+        // Check refresh token validity
+        if (!tokenService.isTokenValid(refreshToken)) {
+            throw new InvalidRefreshTokenException(String.format("Refresh token is invalid for client [%s]", clientId));
+        }
+
+        String username = tokenService.getTokenClaim(refreshToken, "username");
+        String accountId = tokenService.getTokenClaim(refreshToken, "account_id");
+        String scopeStr = tokenService.getTokenClaim(refreshToken, "scope");
+
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(Integer.parseInt(accountId), username);
+        Set<String> scopes = Stream.of(scopeStr.split(" ")).collect(Collectors.toSet());
+
+        String token = createAccessToken(clientId, authenticatedUser, scopes);
+        String newRefreshToken = createRefreshToken(token);
+
+        return createOauth2TokenResponse(token, newRefreshToken, scopes);
     }
 
     private PlatformClient getPlatformClientFromClientId(String clientId) {

@@ -3,9 +3,6 @@ package ca.bernstein.resources.authorization;
 import ca.bernstein.annotation.AuthenticationRequired;
 import ca.bernstein.exceptions.OAuth2Exception;
 import ca.bernstein.exceptions.authorization.AuthorizationException;
-import ca.bernstein.exceptions.authorization.InvalidScopeException;
-import ca.bernstein.exceptions.authorization.UnauthorizedClientException;
-import ca.bernstein.exceptions.authorization.UnknownClientException;
 import ca.bernstein.models.authentication.AuthenticatedUser;
 import ca.bernstein.models.error.ErrorType;
 import ca.bernstein.models.oauth.*;
@@ -90,6 +87,9 @@ public class OAuth2AuthorizationResource {
         } else if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.PASSWORD) {
             tokenResponse = authorizationService.getTokenResponseForPasswordGrant(authorizationDetails,
                     oAuth2TokenRequest.getUsername(), oAuth2TokenRequest.getPassword(), requestedScopes);
+
+        } else if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.REFRESH_TOKEN) {
+            tokenResponse = authorizationService.getTokenResponseForRefreshTokenGrant(authorizationDetails, oAuth2TokenRequest.getRefreshToken());
         }
 
         // We should never get here as validations would've ensured response type value

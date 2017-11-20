@@ -5,7 +5,11 @@ import ca.bernstein.exceptions.authorization.TokenException;
 import ca.bernstein.factories.jose.JwsAlgorithmFactory;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
 
 import javax.inject.Inject;
@@ -13,6 +17,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 public class JwtTokenService implements TokenService {
 
     private final JwsAlgorithmFactory jwsAlgorithmFactory;
@@ -67,6 +72,30 @@ public class JwtTokenService implements TokenService {
 
     @Override
     public boolean isTokenValid(String token) {
+        try {
+            for (Algorithm algorithm : jwsAlgorithmFactory.createAlgorithmsForVerification()) {
+                JWTVerifier verifier = JWT.require(algorithm).build();
+
+                // This is not ideal... But due to Auth0's JWT implementation, we have to run the try/catch here as
+                // the recommended way to verify token is to check if the verifier throws an exception :s
+                try {
+                    verifier.verify(token);
+                    return true;
+                } catch (JWTVerificationException e) {
+                    log.debug("Token was not valid... skipping...");
+                }
+            }
+        } catch (SigningKeyException e) {
+            log.warn("Unable to properly create verification algorithm using found passive/active keys. " +
+                    "Marking token as invalid as a result.");
+        }
+
         return false;
+    }
+
+    @Override
+    public String getTokenClaim(String token, String claim) {
+        DecodedJWT decodedAccessToken = JWT.decode(token);
+        return decodedAccessToken.getClaim(claim).asString();
     }
 }

@@ -9,6 +9,9 @@ import com.auth0.jwt.algorithms.Algorithm;
 
 import javax.inject.Inject;
 import java.io.UnsupportedEncodingException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Creates a new Algorithm object to be used in signing JWT
@@ -30,6 +33,20 @@ public class JwsAlgorithmFactory {
         }
 
         return algorithm;
+    }
+
+    public Set<Algorithm> createAlgorithmsForVerification() throws SigningKeyException {
+        Set<Algorithm> algorithms = new HashSet<>();
+        SigningKey activeKey = this.keyManager.getActiveKey();
+        if (activeKey != null) {
+            algorithms.add(createAlgorithm(activeKey));
+        }
+
+        for (SigningKey signingKey : this.keyManager.getPassiveKeys()) {
+            algorithms.add(createAlgorithm(signingKey));
+        }
+
+        return algorithms;
     }
 
     private Algorithm createAlgorithm(SigningKey signingKey) throws SigningKeyException {
