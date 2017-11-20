@@ -31,6 +31,13 @@ public class OAuth2AuthCode implements Serializable {
     @Getter @Setter private Set<String> resolvedScopes;
 
     /**
+     * The redirect URI that the client will redirect to with this code
+     * <p>This redirect URI will be checked later. A client requesting a token using this code must supply the same
+     * redirect URI</p>
+     */
+    @Getter @Setter private String redirectUri;
+
+    /**
      * An authenticated user that the code is generated on behalf of
      */
     @Getter @Setter private AuthenticatedUser authenticatedUser;

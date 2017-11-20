@@ -3,7 +3,7 @@ package ca.bernstein.resources.authentication;
 import ca.bernstein.exceptions.authentication.AuthenticationException;
 import ca.bernstein.exceptions.authentication.InvalidCredentialsException;
 import ca.bernstein.exceptions.authentication.UnknownAccountException;
-import ca.bernstein.exceptions.web.LoginWebException;
+import ca.bernstein.exceptions.LoginException;
 import ca.bernstein.models.authentication.LoginPageConfig;
 import ca.bernstein.models.authentication.LoginRequest;
 import ca.bernstein.models.error.ErrorType;
@@ -66,17 +66,17 @@ public class LoginResource {
             return Response.seeOther(returnTo).build();
         } catch (UnknownAccountException e) {
             log.error("No account was found for email [{}]", loginRequest.getUsername(), e);
-            throw new LoginWebException(ErrorType.Authentication.UNKNOWN_ACCOUNT, Response.Status.BAD_REQUEST,
+            throw new LoginException(ErrorType.Authentication.UNKNOWN_ACCOUNT, Response.Status.BAD_REQUEST,
                     getLoginPageConfigFromLoginRequest(loginRequest), loginRequest.getUsername());
 
         } catch (InvalidCredentialsException e) {
             log.error("Invalid credentials given for email [{}]", loginRequest.getUsername(), e);
-            throw new LoginWebException(ErrorType.Authentication.INVALID_CREDENTIALS, Response.Status.BAD_REQUEST,
+            throw new LoginException(ErrorType.Authentication.INVALID_CREDENTIALS, Response.Status.BAD_REQUEST,
                     getLoginPageConfigFromLoginRequest(loginRequest));
 
         } catch (AuthenticationException e) {
             log.error("An unknown error occurred attempting authentication for email [{}]", loginRequest.getUsername(), e);
-            throw new LoginWebException(ErrorType.Authentication.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR,
+            throw new LoginException(ErrorType.Authentication.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR,
                     getLoginPageConfigFromLoginRequest(loginRequest));
         }
     }

@@ -29,7 +29,7 @@ public class PlatformClient implements Serializable {
     @Column(nullable = false, name = "client_secret")
     @Getter @Setter private String clientSecret;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(nullable = false, name = "account_id")
     @Getter @Setter private Account account;
 

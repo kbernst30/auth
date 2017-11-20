@@ -1,31 +1,22 @@
 package ca.bernstein.resources.authorization;
 
 import ca.bernstein.annotation.AuthenticationRequired;
-import ca.bernstein.exceptions.web.OAuth2WebException;
+import ca.bernstein.exceptions.OAuth2Exception;
 import ca.bernstein.exceptions.authorization.AuthorizationException;
 import ca.bernstein.exceptions.authorization.InvalidScopeException;
 import ca.bernstein.exceptions.authorization.UnauthorizedClientException;
 import ca.bernstein.exceptions.authorization.UnknownClientException;
 import ca.bernstein.models.authentication.AuthenticatedUser;
 import ca.bernstein.models.error.ErrorType;
-import ca.bernstein.models.oauth.OAuth2AuthorizationRequest;
-import ca.bernstein.models.oauth.OAuth2GrantType;
-import ca.bernstein.models.oauth.OAuth2ResponseType;
-import ca.bernstein.models.oauth.OAuth2TokenResponse;
+import ca.bernstein.models.oauth.*;
 import ca.bernstein.services.authorization.OAuth2AuthorizationService;
 import ca.bernstein.util.Validations;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
-import javax.ws.rs.BeanParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import java.net.URI;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,41 +47,57 @@ public class OAuth2AuthorizationResource {
     @Path("/authorize")
     @AuthenticationRequired
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getOauth2Authorization(@BeanParam OAuth2AuthorizationRequest oAuth2AuthorizationRequest,
+    public Response getOAuth2Authorization(@BeanParam OAuth2AuthorizationRequest oAuth2AuthorizationRequest,
                                            @Context AuthenticatedUser authenticatedUser) {
 
         Validations.validateOAuth2AuthorizationRequest(oAuth2AuthorizationRequest);
 
-        try {
-            if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.CODE) {
-                return getOAuth2AuthorizationCodeResponse(oAuth2AuthorizationRequest, authenticatedUser);
-            } else if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.TOKEN) {
-                return getOauth2AuthorizationTokenResponse(oAuth2AuthorizationRequest, authenticatedUser);
-            }
-
-            // We should never get here as validations would've ensured response type value
-            throw new OAuth2WebException(ErrorType.OAuth2.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR);
-
-        } catch (UnknownClientException e) {
-            log.warn("No client was found for clientId [{}]", oAuth2AuthorizationRequest.getClientId(), e);
-            throw new OAuth2WebException(ErrorType.OAuth2.UNKNOWN_CLIENT_ID, Response.Status.BAD_REQUEST,
-                    oAuth2AuthorizationRequest.getClientId());
-
-        } catch (UnauthorizedClientException e) {
-            log.warn("Client [{}] requested an authorization code but is not allowed to authorize in this way",
-                    oAuth2AuthorizationRequest.getClientId(), e);
-            throw new OAuth2WebException(ErrorType.OAuth2.GRANT_TYPE_NOT_ALLOWED, Response.Status.BAD_REQUEST,
-                    oAuth2AuthorizationRequest.getClientId(), OAuth2GrantType.AUTHORIZATION_CODE.name().toLowerCase());
-
-        } catch (InvalidScopeException e) {
-            log.warn("Client [{}] requested an invalid scope [{}]", oAuth2AuthorizationRequest.getClientId(), e.getScope(), e);
-            throw new OAuth2WebException(ErrorType.OAuth2.INVALID_SCOPE, Response.Status.BAD_REQUEST,
-                    oAuth2AuthorizationRequest.getClientId(), e.getScope());
-
-        } catch (AuthorizationException e) {
-            log.error("An unexpected error occurred processing OAuth2.0 authorization", e);
-            throw new OAuth2WebException(ErrorType.OAuth2.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR);
+        if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.CODE) {
+            return getOAuth2AuthorizationCodeResponse(oAuth2AuthorizationRequest, authenticatedUser);
+        } else if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.TOKEN) {
+            return getOauth2AuthorizationTokenResponse(oAuth2AuthorizationRequest, authenticatedUser);
         }
+
+        // We should never get here as validations would've ensured response type value
+        throw new OAuth2Exception(ErrorType.OAuth2.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Processes an OAuth2.0 token request to the /token endpoint
+     * @param oAuth2TokenRequest A valid OAuth2TokenRequest object
+     * @return A valid Response containing a token response object in JSON format
+     */
+    @POST
+    @Path("/token")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getOAuth2Token(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+                                   @BeanParam OAuth2TokenRequest oAuth2TokenRequest) {
+
+        BasicAuthorizationDetails authorizationDetails = BasicAuthorizationDetails.fromHeaderString(authorizationHeader);
+        Validations.validateOAuth2TokenRequest(oAuth2TokenRequest, authorizationDetails);
+
+        OAuth2TokenResponse tokenResponse = null;
+        Set<String> requestedScopes = getRequestedScopes(oAuth2TokenRequest.getScope());
+
+        if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.AUTHORIZATION_CODE) {
+            tokenResponse = authorizationService.getTokenResponseForAuthorizationCodeGrant(oAuth2TokenRequest.getCode(),
+                    authorizationDetails, oAuth2TokenRequest.getRedirectUri());
+
+        } else if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.CLIENT_CREDENTIALS) {
+            tokenResponse = authorizationService.getTokenResponseForClientCredentialsGrant(authorizationDetails, requestedScopes);
+
+        } else if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.PASSWORD) {
+            tokenResponse = authorizationService.getTokenResponseForPasswordGrant(authorizationDetails,
+                    oAuth2TokenRequest.getUsername(), oAuth2TokenRequest.getPassword(), requestedScopes);
+        }
+
+        // We should never get here as validations would've ensured response type value
+        if (tokenResponse == null) {
+            throw new OAuth2Exception(ErrorType.OAuth2.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return Response.ok(tokenResponse).build();
     }
 
     private Set<String> getRequestedScopes(String scopeStr) {
@@ -107,7 +114,7 @@ public class OAuth2AuthorizationResource {
 
         Set<String> requestedScopes = getRequestedScopes(oAuth2AuthorizationRequest.getScope());
         String code = authorizationService.generateAuthorizationCode(oAuth2AuthorizationRequest.getClientId(),
-                requestedScopes, authenticatedUser);
+                requestedScopes, oAuth2AuthorizationRequest.getRedirectUri(), authenticatedUser);
 
         URI requestedUri = URI.create(oAuth2AuthorizationRequest.getRedirectUri());
         URI resolvedRedirectUri = UriBuilder.fromUri(requestedUri)

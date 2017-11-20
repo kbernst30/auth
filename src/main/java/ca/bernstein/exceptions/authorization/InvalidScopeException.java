@@ -1,20 +1,17 @@
 package ca.bernstein.exceptions.authorization;
 
-public class InvalidScopeException extends AuthorizationException {
+import ca.bernstein.exceptions.OAuth2Exception;
+import ca.bernstein.models.error.ErrorType;
 
-    private final String scope;
+import javax.ws.rs.core.Response;
 
-    public InvalidScopeException(String message, String scope) {
-        super(message);
-        this.scope = scope;
+public class InvalidScopeException extends OAuth2Exception {
+
+    public InvalidScopeException(String message, String clientId, String scope) {
+        super(message, ErrorType.OAuth2.INVALID_SCOPE, Response.Status.BAD_REQUEST, clientId, scope);
     }
 
-    public InvalidScopeException(String message, Throwable cause, String scope) {
-        super(message, cause);
-        this.scope = scope;
-    }
-
-    public String getScope() {
-        return scope;
+    public InvalidScopeException(String message, Throwable cause, String clientId, String scope) {
+        super(message, cause, ErrorType.OAuth2.INVALID_SCOPE, Response.Status.BAD_REQUEST, clientId, scope);
     }
 }

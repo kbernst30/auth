@@ -5,6 +5,7 @@ import ca.bernstein.exceptions.authorization.TokenException;
 import ca.bernstein.factories.jose.JwsAlgorithmFactory;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.joda.time.DateTime;
 
 import javax.inject.Inject;
@@ -44,7 +45,24 @@ public class JwtTokenService implements TokenService {
 
     @Override
     public String createRefreshToken(String accessToken) throws TokenException {
-        return null;
+        DecodedJWT decodedAccessToken = JWT.decode(accessToken);
+        JWTCreator.Builder jwtCreator = JWT.create();
+
+        decodedAccessToken.getClaims().forEach((string, claim) -> jwtCreator.withClaim(string, claim.asString()));
+
+        Date now = new Date();
+
+        // Create some defaults
+        jwtCreator.withJWTId(UUID.randomUUID().toString());
+        jwtCreator.withIssuedAt(now);
+        jwtCreator.withExpiresAt(new DateTime(decodedAccessToken.getExpiresAt()).plusDays(7).toDate());
+        jwtCreator.withClaim("ati", decodedAccessToken.getId());
+
+        try {
+            return jwtCreator.sign(jwsAlgorithmFactory.createAlgorithmForSignature());
+        } catch (SigningKeyException e) {
+            throw new TokenException("Failed to create a JWT due to a problem with the signing key", e);
+        }
     }
 
     @Override

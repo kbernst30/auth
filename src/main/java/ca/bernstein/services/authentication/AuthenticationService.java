@@ -38,16 +38,21 @@ public class AuthenticationService {
             httpSession.invalidate();
         }
 
+        // Set new session attributes
+        AuthenticatedUser authenticatedUser = authenticateAndGetUser(loginRequest.getUsername(), loginRequest.getPassword());
+        httpSession.setAttribute(AuthenticationUtils.AUTHENTICATED_USER, authenticatedUser);
+    }
+
+    @Transactional
+    public AuthenticatedUser authenticateAndGetUser(String username, String password) throws AuthenticationException {
+
         // Get account and verify credentials
-        Account account = getAccountByEmail(loginRequest.getUsername());
-        if (!AuthenticationUtils.checkPassword(loginRequest.getPassword(), account.getPassword())) {
-            throw new InvalidCredentialsException(String.format("Password was invalid for account with email %s",
-                    loginRequest.getUsername()));
+        Account account = getAccountByEmail(username);
+        if (!AuthenticationUtils.checkPassword(password, account.getPassword())) {
+            throw new InvalidCredentialsException(String.format("Password was invalid for account with email %s", username));
         }
 
-        // Set new session attributes
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(account.getId(), account.getEmail());
-        httpSession.setAttribute(AuthenticationUtils.AUTHENTICATED_USER, authenticatedUser);
+        return new AuthenticatedUser(account.getId(), account.getEmail());
     }
 
     private Account getAccountByEmail(String email) throws AuthenticationException {
