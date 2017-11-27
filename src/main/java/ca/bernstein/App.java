@@ -7,6 +7,7 @@ import ca.bernstein.factories.hk2.HttpSessionFactory;
 import ca.bernstein.factories.hk2.JpaConfigurationFactory;
 import ca.bernstein.factories.jose.JwsAlgorithmFactory;
 import ca.bernstein.factories.jose.KeyProviderFactory;
+import ca.bernstein.factories.web.AuthorizationResponseTypeFactoy;
 import ca.bernstein.filters.AuthenticationFilter;
 import ca.bernstein.models.authentication.AuthenticatedUser;
 import ca.bernstein.models.jpa.AllowedScope;
@@ -69,6 +70,7 @@ public class App extends ResourceConfig {
                 bind(ScopeDao.class).to(ScopeDao.class).in(Singleton.class);
 
                 // Factories
+                bind(AuthorizationResponseTypeFactoy.class).to(AuthorizationResponseTypeFactoy.class).in(Singleton.class);
                 bind(JwsAlgorithmFactory.class).to(JwsAlgorithmFactory.class).in(Singleton.class);
                 bind(KeyProviderFactory.class).to(KeyProviderFactory.class).in(Singleton.class);
 

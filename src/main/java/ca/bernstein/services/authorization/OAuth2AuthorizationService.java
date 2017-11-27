@@ -6,7 +6,7 @@ import ca.bernstein.exceptions.jpa.JpaExecutionException;
 import ca.bernstein.models.authentication.AuthenticatedUser;
 import ca.bernstein.models.jpa.AllowedScope;
 import ca.bernstein.models.jpa.PlatformClient;
-import ca.bernstein.models.oauth.BasicAuthorizationDetails;
+import ca.bernstein.models.common.BasicAuthorizationDetails;
 import ca.bernstein.models.oauth.OAuth2AuthCode;
 import ca.bernstein.models.oauth.OAuth2GrantType;
 import ca.bernstein.models.oauth.OAuth2TokenResponse;
@@ -271,7 +271,7 @@ public class OAuth2AuthorizationService {
         }
 
         List<String> unauthorizedScopes = Lists.newArrayList(Sets.difference(allowedScopes, requestedScopes));
-        if (unauthorizedScopes.size() > 0) {
+        if (!allowedScopes.contains("privileged") && unauthorizedScopes.size() > 0) {
             throw new InvalidScopeException(String.format("Client [%s] requested a scope they are not authorized for",
                     clientId), clientId, unauthorizedScopes.get(0));
         }

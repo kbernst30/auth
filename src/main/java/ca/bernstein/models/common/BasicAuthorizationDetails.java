@@ -1,4 +1,4 @@
-package ca.bernstein.models.oauth;
+package ca.bernstein.models.common;
 
 import lombok.*;
 import org.apache.commons.lang3.StringUtils;

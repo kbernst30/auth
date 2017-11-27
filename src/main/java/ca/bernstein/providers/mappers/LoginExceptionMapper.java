@@ -1,4 +1,4 @@
-package ca.bernstein.providers;
+package ca.bernstein.providers.mappers;
 
 import ca.bernstein.exceptions.LoginException;
 import ca.bernstein.models.authentication.LoginPageConfig;

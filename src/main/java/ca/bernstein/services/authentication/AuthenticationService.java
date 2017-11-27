@@ -34,9 +34,6 @@ public class AuthenticationService {
         // TODO support social logins
 
         HttpSession httpSession = httpSessionProvider.get();
-        if (AuthenticationUtils.isValidSession(httpSession)) {
-            httpSession.invalidate();
-        }
 
         // Set new session attributes
         AuthenticatedUser authenticatedUser = authenticateAndGetUser(loginRequest.getUsername(), loginRequest.getPassword());

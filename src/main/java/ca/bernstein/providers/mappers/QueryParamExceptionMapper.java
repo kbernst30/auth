@@ -1,4 +1,4 @@
-package ca.bernstein.providers;
+package ca.bernstein.providers.mappers;
 
 import ca.bernstein.models.error.ErrorResponse;
 import ca.bernstein.models.error.ErrorType;

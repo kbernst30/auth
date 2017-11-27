@@ -11,7 +11,10 @@ public enum JwtReservedClaim {
     AUDIENCE("aud"),
     PRINCIPAL("prn"),
     JTI("jti"),
-    TYPE("typ");
+    TYPE("typ"),
+    SUBJECT("sub"),
+    AUTH_TIME("auth_time"),
+    NONCE("nonce");
 
     @Getter private final String value;
 

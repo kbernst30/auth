@@ -2,20 +2,30 @@ package ca.bernstein.resources.authorization;
 
 import ca.bernstein.annotation.AuthenticationRequired;
 import ca.bernstein.exceptions.OAuth2Exception;
+import ca.bernstein.exceptions.OpenIdConnectException;
 import ca.bernstein.exceptions.authorization.AuthorizationException;
 import ca.bernstein.models.authentication.AuthenticatedUser;
+import ca.bernstein.models.authentication.oidc.OidcAuthenticationRequest;
+import ca.bernstein.models.authentication.oidc.OidcPrompt;
+import ca.bernstein.models.common.AuthorizationRequest;
+import ca.bernstein.models.common.BasicAuthorizationDetails;
 import ca.bernstein.models.error.ErrorType;
 import ca.bernstein.models.oauth.*;
 import ca.bernstein.services.authorization.OAuth2AuthorizationService;
+import ca.bernstein.util.AuthenticationUtils;
 import ca.bernstein.util.Validations;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.EncoderException;
+import org.apache.commons.codec.net.URLCodec;
 import org.apache.commons.lang3.StringUtils;
+import org.ietf.jgss.Oid;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.net.URI;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,30 +34,51 @@ import java.util.stream.Stream;
  */
 @Slf4j
 @Path("/oauth")
-public class OAuth2AuthorizationResource {
+public class AuthorizationResource {
 
     private final OAuth2AuthorizationService authorizationService;
 
     @Inject
-    public OAuth2AuthorizationResource(OAuth2AuthorizationService authorizationService) {
+    public AuthorizationResource(OAuth2AuthorizationService authorizationService) {
         this.authorizationService = authorizationService;
     }
 
     /**
      * Processes an OAuth2.0 authorize request to the /authorize endpoint
-     * <p>A valid session is necessary to access this resource.</p>
+     * <p>A valid session is necessary to get a successful response from this resource.</p>
      *
-     * @param oAuth2AuthorizationRequest A valid OAuth2AuthorizationRequest object
+     * @param authorizationRequest A valid AuthorizationRequest object
+     * @param session An active session instance
      * @return A valid Response redirect to a valid specified redirect URI
      */
     @GET
     @Path("/authorize")
-    @AuthenticationRequired
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getOAuth2Authorization(@BeanParam OAuth2AuthorizationRequest oAuth2AuthorizationRequest,
-                                           @Context AuthenticatedUser authenticatedUser) {
+    public Response getOAuth2Authorization(@BeanParam AuthorizationRequest authorizationRequest,
+                                           @Context HttpSession session, @Context UriInfo uriInfo) {
 
-        Validations.validateOAuth2AuthorizationRequest(oAuth2AuthorizationRequest);
+        // Validate request parameters
+        Validations.validateAuthorizationRequest(authorizationRequest);
+
+        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = authorizationRequest.getOAuth2AuthorizationRequest();
+        OidcAuthenticationRequest oidcAuthenticationRequest = authorizationRequest.getOidcAuthenticationRequest();
+        boolean isOpenIdConnectLoginPrompt = authorizationRequest.isOpenIdConnectAuthRequest()
+                && OidcPrompt.LOGIN == OidcPrompt.fromString(oidcAuthenticationRequest.getPrompt());
+        boolean isOpenIdConnectNonePrompt = authorizationRequest.isOpenIdConnectAuthRequest()
+                && OidcPrompt.NONE == OidcPrompt.fromString(oidcAuthenticationRequest.getPrompt());
+
+        // If session is invalid OR we've asked for re-authentication, abort this request and re-authenticate
+        // Unless this is an OpenID Connect request with no prompt, in that case throw an error
+        if (!AuthenticationUtils.isValidSession(session) && isOpenIdConnectNonePrompt) {
+            throw new OpenIdConnectException(ErrorType.OpenIdConnect.LOGIN_REQUIRED, Response.Status.UNAUTHORIZED);
+        }
+
+        if (!AuthenticationUtils.isValidSession(session) || isOpenIdConnectLoginPrompt) {
+            session.invalidate();
+            return abortWithAuthenticationRequest(uriInfo.getAbsolutePath().toString(), uriInfo.getQueryParameters());
+        }
+
+        AuthenticatedUser authenticatedUser = AuthenticationUtils.getUserFromSession(session);
 
         if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.CODE) {
             return getOAuth2AuthorizationCodeResponse(oAuth2AuthorizationRequest, authenticatedUser);
@@ -55,7 +86,6 @@ public class OAuth2AuthorizationResource {
             return getOauth2AuthorizationTokenResponse(oAuth2AuthorizationRequest, authenticatedUser);
         }
 
-        // We should never get here as validations would've ensured response type value
         throw new OAuth2Exception(ErrorType.OAuth2.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR);
     }
 
@@ -137,5 +167,25 @@ public class OAuth2AuthorizationResource {
                 .build();
 
         return Response.temporaryRedirect(resolvedRedirectUri).build();
+    }
+
+    private Response abortWithAuthenticationRequest(String requestedUri, Map<String, List<String>> queryParameters) {
+        Map<String, List<String>> resolvedQueryParams = new HashMap<>(queryParameters);
+        if (resolvedQueryParams.containsKey("prompt")) {
+            resolvedQueryParams.remove("prompt");
+        }
+
+        UriBuilder resolvedUriBuilder = UriBuilder.fromUri(requestedUri);
+        resolvedQueryParams.forEach((key, value) -> value.forEach(param -> resolvedUriBuilder.queryParam(key, param)));
+
+        URI authenticationUri;
+        try {
+            authenticationUri = URI.create("/auth/login?returnTo=" + (new URLCodec()).encode(resolvedUriBuilder.build().toString()));
+        } catch (EncoderException e) {
+            log.warn("Failed to encode returnTo URI [{}]", requestedUri);
+            authenticationUri = URI.create("/auth/login");
+        }
+
+        return Response.seeOther(authenticationUri).build();
     }
 }

@@ -1,11 +1,12 @@
 package ca.bernstein.models.oauth;
 
+import ca.bernstein.models.common.AuthorizationResponseType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 /**
- * Represents the valid types of responses that can be returned to an authorization request
+ * Represents the valid types of OAuth2.0 responses that can be returned to an authorization request
  */
-public enum OAuth2ResponseType {
+public enum OAuth2ResponseType implements AuthorizationResponseType {
 
     CODE,
     TOKEN;

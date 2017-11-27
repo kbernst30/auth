@@ -1,6 +1,6 @@
-package ca.bernstein.providers;
+package ca.bernstein.providers.mappers;
 
-import ca.bernstein.exceptions.OAuth2Exception;
+import ca.bernstein.exceptions.AbstractWebApplicationException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.core.MediaType;
@@ -9,14 +9,13 @@ import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
 /**
- * An exception mapper that maps all OAuth2.0 web exceptions to a valid JSON response representation
+ * An abstract exception mapper
  */
 @Slf4j
-@Provider
-public class OAuth2ExceptionMapper implements ExceptionMapper<OAuth2Exception> {
+public abstract class AbstractExceptionMapper<T extends AbstractWebApplicationException> implements ExceptionMapper<T> {
 
     @Override
-    public Response toResponse(OAuth2Exception e) {
+    public Response toResponse(T e) {
         if (e.getResponse().getStatus() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
             log.error(e.getMessage());
         } else {

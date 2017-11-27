@@ -1,5 +1,6 @@
 package ca.bernstein.models.oauth;
 
+import ca.bernstein.models.common.AuthorizationResponseType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -16,7 +17,7 @@ public class OAuth2AuthorizationRequest {
      * The requested response type
      */
     @QueryParam("response_type")
-    @Getter @Setter private OAuth2ResponseType responseType;
+    @Getter @Setter private AuthorizationResponseType responseType;
 
     /**
      * The ID of the client requested authorization
