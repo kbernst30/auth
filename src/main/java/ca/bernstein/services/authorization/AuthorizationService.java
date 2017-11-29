@@ -4,10 +4,13 @@ import ca.bernstein.exceptions.authentication.AuthenticationException;
 import ca.bernstein.exceptions.authorization.*;
 import ca.bernstein.exceptions.jpa.JpaExecutionException;
 import ca.bernstein.models.authentication.AuthenticatedUser;
+import ca.bernstein.models.common.AuthorizationRequest;
+import ca.bernstein.models.common.AuthorizationResponseType;
 import ca.bernstein.models.jpa.AllowedScope;
 import ca.bernstein.models.jpa.PlatformClient;
 import ca.bernstein.models.common.BasicAuthorizationDetails;
 import ca.bernstein.models.oauth.OAuth2AuthCode;
+import ca.bernstein.models.oauth.OAuth2AuthorizationRequest;
 import ca.bernstein.models.oauth.OAuth2GrantType;
 import ca.bernstein.models.oauth.OAuth2TokenResponse;
 import ca.bernstein.persistence.PlatformClientDao;
@@ -17,6 +20,7 @@ import ca.bernstein.services.cache.Cache;
 import ca.bernstein.services.cache.CacheBuilder;
 import ca.bernstein.services.jose.TokenService;
 import ca.bernstein.util.AuthenticationUtils;
+import ca.bernstein.util.AuthorizationUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +37,7 @@ import static org.apache.commons.text.CharacterPredicates.DIGITS;
 import static org.apache.commons.text.CharacterPredicates.LETTERS;
 
 @Slf4j
-public class OAuth2AuthorizationService {
+public class AuthorizationService {
 
     private static final int AUTH_CODE_LENGTH = 20;
     private static final int TOKEN_EXPIRY_TIME_SECONDS = 3600;
@@ -48,8 +52,8 @@ public class OAuth2AuthorizationService {
 
 
     @Inject
-    public OAuth2AuthorizationService(AuthenticationService authenticationService, PlatformClientDao platformClientDao,
-                                      ScopeDao scopeDao, TokenService tokenService) {
+    public AuthorizationService(AuthenticationService authenticationService, PlatformClientDao platformClientDao,
+                                ScopeDao scopeDao, TokenService tokenService) {
 
         this.authenticationService = authenticationService;
         this.platformClientDao = platformClientDao;
@@ -67,9 +71,16 @@ public class OAuth2AuthorizationService {
     }
 
     @Transactional
-    public String generateAuthorizationCode(String clientId, Set<String> requestedScopes, String redirectUri, AuthenticatedUser authenticatedUser) {
+    public OAuth2AuthCode generateAuthorizationCode(AuthorizationRequest authorizationRequest, AuthenticatedUser authenticatedUser) {
+
+        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = authorizationRequest.getOAuth2AuthorizationRequest();
+        String clientId = oAuth2AuthorizationRequest.getClientId();
+        Set<String> requestedScopes = AuthorizationUtils.getScopes(oAuth2AuthorizationRequest.getScope());
+        Set<AuthorizationResponseType> responseTypes = oAuth2AuthorizationRequest.getResponseTypes();
+        String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
 
         PlatformClient client = getPlatformClientFromClientId(clientId);
+        System.out.println(client.getAuthorizedGrantTypes());
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.AUTHORIZATION_CODE)) {
             throw new UnauthorizedClientException(String.format("Client [%s] is not authorized to request an " +
                     "authorization code", clientId), clientId, OAuth2GrantType.AUTHORIZATION_CODE.name().toLowerCase());
@@ -77,6 +88,7 @@ public class OAuth2AuthorizationService {
 
         Set<String> resolvedScopes = getResolvedClientScope(client, requestedScopes);
 
+        // TODO We need to deal with the Hybrid request (i.e. code AND token/id_token for openid connect requests)
         // We will add synchronization code here. Although the cache implementation might be thread safe (as is the case
         // for the current in memory implementation using Guava Cache), we cannot guarantee that every implementation will
         // be so. The synchronized block will add additional safety
@@ -97,7 +109,7 @@ public class OAuth2AuthorizationService {
             }
         }
 
-        return oAuth2AuthCode.getCode();
+        return oAuth2AuthCode;
     }
 
     @Transactional

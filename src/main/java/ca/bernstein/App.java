@@ -7,7 +7,6 @@ import ca.bernstein.factories.hk2.HttpSessionFactory;
 import ca.bernstein.factories.hk2.JpaConfigurationFactory;
 import ca.bernstein.factories.jose.JwsAlgorithmFactory;
 import ca.bernstein.factories.jose.KeyProviderFactory;
-import ca.bernstein.factories.web.AuthorizationResponseTypeFactoy;
 import ca.bernstein.filters.AuthenticationFilter;
 import ca.bernstein.models.authentication.AuthenticatedUser;
 import ca.bernstein.models.jpa.AllowedScope;
@@ -15,7 +14,7 @@ import ca.bernstein.persistence.*;
 import ca.bernstein.persistence.hibernate.HibernateDao;
 import ca.bernstein.persistence.hibernate.HibernateSessionProvider;
 import ca.bernstein.services.authentication.AuthenticationService;
-import ca.bernstein.services.authorization.OAuth2AuthorizationService;
+import ca.bernstein.services.authorization.AuthorizationService;
 import ca.bernstein.services.jose.JwtTokenService;
 import ca.bernstein.services.jose.KeyManager;
 import ca.bernstein.services.jose.KeyManagerImpl;
@@ -70,7 +69,6 @@ public class App extends ResourceConfig {
                 bind(ScopeDao.class).to(ScopeDao.class).in(Singleton.class);
 
                 // Factories
-                bind(AuthorizationResponseTypeFactoy.class).to(AuthorizationResponseTypeFactoy.class).in(Singleton.class);
                 bind(JwsAlgorithmFactory.class).to(JwsAlgorithmFactory.class).in(Singleton.class);
                 bind(KeyProviderFactory.class).to(KeyProviderFactory.class).in(Singleton.class);
 
@@ -78,7 +76,7 @@ public class App extends ResourceConfig {
                 bind(AuthenticationService.class).to(AuthenticationService.class).in(Singleton.class);
                 bind(JwtTokenService.class).to(TokenService.class).in(Singleton.class);
                 bind(KeyManagerImpl.class).to(KeyManager.class).in(Singleton.class);
-                bind(OAuth2AuthorizationService.class).to(OAuth2AuthorizationService.class).in(Singleton.class);
+                bind(AuthorizationService.class).to(AuthorizationService.class).in(Singleton.class);
 
                 // Sessions
                 bindFactory(AuthenticatedUserFactory.class).to(AuthenticatedUser.class);

@@ -12,7 +12,16 @@ import java.util.Set;
 @ToString
 @EqualsAndHashCode
 @AllArgsConstructor
+@NoArgsConstructor
 public class OAuth2AuthCode implements Serializable {
+
+    public OAuth2AuthCode(String code, String clientId, Set<String> resolvedScopes, String redirectUri, AuthenticatedUser authenticatedUser) {
+        this.code = code;
+        this.clientId = clientId;
+        this.resolvedScopes = resolvedScopes;
+        this.redirectUri = redirectUri;
+        this.authenticatedUser = authenticatedUser;
+    }
 
     /**
      * A random alphanumeric string representing an authorization code
@@ -41,5 +50,17 @@ public class OAuth2AuthCode implements Serializable {
      * An authenticated user that the code is generated on behalf of
      */
     @Getter @Setter private AuthenticatedUser authenticatedUser;
+
+    /**
+     * The ID token associated with this authorization code
+     * <p>This will be null unless the client requested an authorization code using a hybrid flow with id_token</p>
+     */
+    @Getter @Setter private String idToken;
+
+    /**
+     * Tha access token associated with this authorization code
+     * <p>This will be null unless the client requested an authorization code using a hybrid flow with token</p>
+     */
+    @Getter @Setter private String accessToken;
 
 }

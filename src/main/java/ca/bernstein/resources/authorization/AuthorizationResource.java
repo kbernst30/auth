@@ -1,24 +1,24 @@
 package ca.bernstein.resources.authorization;
 
-import ca.bernstein.annotation.AuthenticationRequired;
 import ca.bernstein.exceptions.OAuth2Exception;
 import ca.bernstein.exceptions.OpenIdConnectException;
 import ca.bernstein.exceptions.authorization.AuthorizationException;
 import ca.bernstein.models.authentication.AuthenticatedUser;
 import ca.bernstein.models.authentication.oidc.OidcAuthenticationRequest;
 import ca.bernstein.models.authentication.oidc.OidcPrompt;
+import ca.bernstein.models.authentication.oidc.OidcResponseType;
 import ca.bernstein.models.common.AuthorizationRequest;
+import ca.bernstein.models.common.AuthorizationResponseType;
 import ca.bernstein.models.common.BasicAuthorizationDetails;
 import ca.bernstein.models.error.ErrorType;
 import ca.bernstein.models.oauth.*;
-import ca.bernstein.services.authorization.OAuth2AuthorizationService;
+import ca.bernstein.services.authorization.AuthorizationService;
 import ca.bernstein.util.AuthenticationUtils;
+import ca.bernstein.util.AuthorizationUtils;
 import ca.bernstein.util.Validations;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.EncoderException;
 import org.apache.commons.codec.net.URLCodec;
-import org.apache.commons.lang3.StringUtils;
-import org.ietf.jgss.Oid;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpSession;
@@ -26,8 +26,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.net.URI;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * A resource for OAuth2.0 authorization requests
@@ -36,16 +34,19 @@ import java.util.stream.Stream;
 @Path("/oauth")
 public class AuthorizationResource {
 
-    private final OAuth2AuthorizationService authorizationService;
+    private final AuthorizationService authorizationService;
 
     @Inject
-    public AuthorizationResource(OAuth2AuthorizationService authorizationService) {
+    public AuthorizationResource(AuthorizationService authorizationService) {
         this.authorizationService = authorizationService;
     }
 
     /**
      * Processes an OAuth2.0 authorize request to the /authorize endpoint
      * <p>A valid session is necessary to get a successful response from this resource.</p>
+     * <p>
+     *     To request OpenID Connect authentication, <i>openid</i> must be specified as a requested scope
+     * </p>
      *
      * @param authorizationRequest A valid AuthorizationRequest object
      * @param session An active session instance
@@ -58,10 +59,12 @@ public class AuthorizationResource {
                                            @Context HttpSession session, @Context UriInfo uriInfo) {
 
         // Validate request parameters
-        Validations.validateAuthorizationRequest(authorizationRequest);
-
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = authorizationRequest.getOAuth2AuthorizationRequest();
         OidcAuthenticationRequest oidcAuthenticationRequest = authorizationRequest.getOidcAuthenticationRequest();
+
+        Validations.validateAuthorizationRequest(authorizationRequest);
+
+        Set<AuthorizationResponseType> authorizationResponseTypes = oAuth2AuthorizationRequest != null ? oAuth2AuthorizationRequest.getResponseTypes() : new HashSet<>();
         boolean isOpenIdConnectLoginPrompt = authorizationRequest.isOpenIdConnectAuthRequest()
                 && OidcPrompt.LOGIN == OidcPrompt.fromString(oidcAuthenticationRequest.getPrompt());
         boolean isOpenIdConnectNonePrompt = authorizationRequest.isOpenIdConnectAuthRequest()
@@ -80,13 +83,12 @@ public class AuthorizationResource {
 
         AuthenticatedUser authenticatedUser = AuthenticationUtils.getUserFromSession(session);
 
-        if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.CODE) {
-            return getOAuth2AuthorizationCodeResponse(oAuth2AuthorizationRequest, authenticatedUser);
-        } else if (oAuth2AuthorizationRequest.getResponseType() == OAuth2ResponseType.TOKEN) {
+        // TODO rethink this as there are possible combinations of response types
+        if (authorizationResponseTypes.contains(OAuth2ResponseType.CODE)) {
+            return getOAuth2AuthorizationCodeResponse(authorizationRequest, authenticatedUser);
+        } else {
             return getOauth2AuthorizationTokenResponse(oAuth2AuthorizationRequest, authenticatedUser);
         }
-
-        throw new OAuth2Exception(ErrorType.OAuth2.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR);
     }
 
     /**
@@ -105,7 +107,7 @@ public class AuthorizationResource {
         Validations.validateOAuth2TokenRequest(oAuth2TokenRequest, authorizationDetails);
 
         OAuth2TokenResponse tokenResponse = null;
-        Set<String> requestedScopes = getRequestedScopes(oAuth2TokenRequest.getScope());
+        Set<String> requestedScopes = AuthorizationUtils.getScopes(oAuth2TokenRequest.getScope());
 
         if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.AUTHORIZATION_CODE) {
             tokenResponse = authorizationService.getTokenResponseForAuthorizationCodeGrant(oAuth2TokenRequest.getCode(),
@@ -130,26 +132,40 @@ public class AuthorizationResource {
         return Response.ok(tokenResponse).build();
     }
 
-    private Set<String> getRequestedScopes(String scopeStr) {
-        Set<String> requestedScopes = null;
-        if (!StringUtils.isEmpty(scopeStr)) {
-            requestedScopes = Stream.of(scopeStr.split(",")).collect(Collectors.toSet());
-        }
-
-        return requestedScopes;
-    }
-
-    private Response getOAuth2AuthorizationCodeResponse(OAuth2AuthorizationRequest oAuth2AuthorizationRequest,
+    private Response getOAuth2AuthorizationCodeResponse(AuthorizationRequest authorizationRequest,
                                                         AuthenticatedUser authenticatedUser) throws AuthorizationException {
 
-        Set<String> requestedScopes = getRequestedScopes(oAuth2AuthorizationRequest.getScope());
-        String code = authorizationService.generateAuthorizationCode(oAuth2AuthorizationRequest.getClientId(),
-                requestedScopes, oAuth2AuthorizationRequest.getRedirectUri(), authenticatedUser);
+        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = authorizationRequest.getOAuth2AuthorizationRequest();
+        OAuth2AuthCode authCode = authorizationService.generateAuthorizationCode(authorizationRequest, authenticatedUser);
+
+        boolean didRequestToken = oAuth2AuthorizationRequest.getResponseTypes().contains(OAuth2ResponseType.TOKEN);
+        boolean didRequestIdToken = oAuth2AuthorizationRequest.getResponseTypes().contains(OidcResponseType.ID_TOKEN);
+        boolean isHybridRequest = authorizationRequest.isOpenIdConnectAuthRequest() && (didRequestToken || didRequestIdToken);
 
         URI requestedUri = URI.create(oAuth2AuthorizationRequest.getRedirectUri());
-        URI resolvedRedirectUri = UriBuilder.fromUri(requestedUri)
-                .queryParam("code", code)
-                .build();
+        UriBuilder resolvedUriBuilder = UriBuilder.fromUri(requestedUri);
+
+        if (isHybridRequest) {
+
+            StringBuilder fragment = new StringBuilder();
+            fragment.append("code=").append(authCode.getCode());
+
+            if (didRequestToken) {
+                fragment.append("&access_token=").append(authCode.getAccessToken());
+                fragment.append("&token_type=").append("bearer");
+                fragment.append("&scope=").append(String.join(" ", authCode.getResolvedScopes()));
+            }
+
+            if (didRequestIdToken) {
+                fragment.append("&id_token=").append(authCode.getIdToken());
+            }
+
+            resolvedUriBuilder.fragment(fragment.toString());
+        } else {
+            resolvedUriBuilder.queryParam("code", authCode.getCode());
+        }
+
+        URI resolvedRedirectUri = resolvedUriBuilder.build();
 
         return Response.temporaryRedirect(resolvedRedirectUri).build();
     }
@@ -157,7 +173,7 @@ public class AuthorizationResource {
     private Response getOauth2AuthorizationTokenResponse(OAuth2AuthorizationRequest oAuth2AuthorizationRequest,
                                                          AuthenticatedUser authenticatedUser) throws AuthorizationException {
 
-        Set<String> requestedScopes = getRequestedScopes(oAuth2AuthorizationRequest.getScope());
+        Set<String> requestedScopes = AuthorizationUtils.getScopes(oAuth2AuthorizationRequest.getScope());
         OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForImplicitGrant(oAuth2AuthorizationRequest.getClientId(),
                 requestedScopes, authenticatedUser);
 
