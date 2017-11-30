@@ -38,14 +38,14 @@ public class OAuth2TokenRequest {
     @Getter @Setter private String code;
 
     /**
-     * The username belonging to the resource owner
+     * The email belonging to the resource owner
      * <p>This will be ignored if grantType is not equal to {@code OAuth2GrantType.PASSWORD}</p>
      */
-    @FormParam("username")
+    @FormParam("email")
     @Getter @Setter private String username;
 
     /**
-     * The password associated with the username belonging to the resource owner
+     * The password associated with the email belonging to the resource owner
      * <p>This will be ignored if grantType is not equal to {@code OAuth2GrantType.PASSWORD}</p>
      */
     @FormParam("password")

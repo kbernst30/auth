@@ -273,7 +273,7 @@ public class AuthorizationService {
             throw new InvalidRefreshTokenException(String.format("Refresh token is invalid for client [%s]", clientId));
         }
 
-        String username = tokenService.getTokenClaim(refreshToken, "username");
+        String username = tokenService.getTokenClaim(refreshToken, "email");
         String accountId = tokenService.getTokenClaim(refreshToken, "account_id");
         String scopeStr = tokenService.getTokenClaim(refreshToken, "scope");
 
@@ -361,7 +361,7 @@ public class AuthorizationService {
 
     private String createAccessToken(String clientId, AuthenticatedUser authenticatedUser, Set<String> scopes) {
         Map<String, String> tokenClaims = new HashMap<>();
-        tokenClaims.put("username", authenticatedUser.getUsername());
+        tokenClaims.put("email", authenticatedUser.getEmail());
         tokenClaims.put("account_id", String.valueOf(authenticatedUser.getUserId()));
         tokenClaims.put("scope", String.join(" ", scopes));
 

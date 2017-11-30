@@ -89,8 +89,8 @@ public class JwtTokenService implements TokenService {
             jwtCreator.withClaim("nonce", nonce);
         }
 
-        jwtCreator.withClaim("username", authenticatedUser.getUsername());
-        jwtCreator.withClaim("account_id", authenticatedUser.getUserId());
+        jwtCreator.withClaim("email", authenticatedUser.getEmail());
+        jwtCreator.withClaim("user_id", authenticatedUser.getUserId());
 
         try {
             Algorithm idTokenAlgorithm = jwsAlgorithmFactory.createAlgorithmForSignature();
@@ -146,7 +146,7 @@ public class JwtTokenService implements TokenService {
             throw new TokenException("Unable to generate subject identifier for user", e);
         }
 
-        String salt = authenticatedUser.getUsername() + ":" + authenticatedUser.getUserId(); // TODO more secure/random salt
+        String salt = authenticatedUser.getEmail() + ":" + authenticatedUser.getUserId(); // TODO more secure/random salt
         byte[] hash = sha256.digest(salt.getBytes());
         return UUID.nameUUIDFromBytes(hash).toString();
     }
