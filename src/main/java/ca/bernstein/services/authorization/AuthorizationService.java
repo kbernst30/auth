@@ -237,7 +237,7 @@ public class AuthorizationService {
 
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.PASSWORD)) {
             throw new UnauthorizedClientException(String.format("Client [%s] is not authorized to request a " +
-                    "token using client_credentials grant.", clientId), clientId, OAuth2GrantType.PASSWORD.name().toLowerCase());
+                    "token using password grant.", clientId), clientId, OAuth2GrantType.PASSWORD.name().toLowerCase());
         }
 
         AuthenticatedUser authenticatedUser;
