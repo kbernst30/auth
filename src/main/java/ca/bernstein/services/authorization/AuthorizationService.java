@@ -4,15 +4,14 @@ import ca.bernstein.exceptions.authentication.AuthenticationException;
 import ca.bernstein.exceptions.authorization.*;
 import ca.bernstein.exceptions.jpa.JpaExecutionException;
 import ca.bernstein.models.authentication.AuthenticatedUser;
+import ca.bernstein.models.authentication.oidc.OidcAuthenticationRequest;
+import ca.bernstein.models.authentication.oidc.OidcResponseType;
 import ca.bernstein.models.common.AuthorizationRequest;
 import ca.bernstein.models.common.AuthorizationResponseType;
 import ca.bernstein.models.jpa.AllowedScope;
 import ca.bernstein.models.jpa.PlatformClient;
 import ca.bernstein.models.common.BasicAuthorizationDetails;
-import ca.bernstein.models.oauth.OAuth2AuthCode;
-import ca.bernstein.models.oauth.OAuth2AuthorizationRequest;
-import ca.bernstein.models.oauth.OAuth2GrantType;
-import ca.bernstein.models.oauth.OAuth2TokenResponse;
+import ca.bernstein.models.oauth.*;
 import ca.bernstein.persistence.PlatformClientDao;
 import ca.bernstein.persistence.ScopeDao;
 import ca.bernstein.services.authentication.AuthenticationService;
@@ -24,6 +23,7 @@ import ca.bernstein.util.AuthorizationUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.RandomStringGenerator;
 
 import javax.inject.Inject;
@@ -74,13 +74,14 @@ public class AuthorizationService {
     public OAuth2AuthCode generateAuthorizationCode(AuthorizationRequest authorizationRequest, AuthenticatedUser authenticatedUser) {
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = authorizationRequest.getOAuth2AuthorizationRequest();
+        OidcAuthenticationRequest oidcAuthenticationRequest = authorizationRequest.getOidcAuthenticationRequest();
+
         String clientId = oAuth2AuthorizationRequest.getClientId();
         Set<String> requestedScopes = AuthorizationUtils.getScopes(oAuth2AuthorizationRequest.getScope());
         Set<AuthorizationResponseType> responseTypes = oAuth2AuthorizationRequest.getResponseTypes();
         String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
 
         PlatformClient client = getPlatformClientFromClientId(clientId);
-        System.out.println(client.getAuthorizedGrantTypes());
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.AUTHORIZATION_CODE)) {
             throw new UnauthorizedClientException(String.format("Client [%s] is not authorized to request an " +
                     "authorization code", clientId), clientId, OAuth2GrantType.AUTHORIZATION_CODE.name().toLowerCase());
@@ -88,14 +89,16 @@ public class AuthorizationService {
 
         Set<String> resolvedScopes = getResolvedClientScope(client, requestedScopes);
 
-        // TODO We need to deal with the Hybrid request (i.e. code AND token/id_token for openid connect requests)
+        boolean isTokenResponseRequested = authorizationRequest.isOpenIdConnectAuthRequest() && responseTypes.contains(OAuth2ResponseType.TOKEN);
+        boolean isIdTokenResponseRequested = authorizationRequest.isOpenIdConnectAuthRequest() && responseTypes.contains(OidcResponseType.ID_TOKEN);
+
         // We will add synchronization code here. Although the cache implementation might be thread safe (as is the case
         // for the current in memory implementation using Guava Cache), we cannot guarantee that every implementation will
         // be so. The synchronized block will add additional safety
-        OAuth2AuthCode oAuth2AuthCode = getAuthCodeForClientAndUser(clientId, authenticatedUser);
+        OAuth2AuthCode oAuth2AuthCode = getExistingAuthCode(clientId, authenticatedUser, isTokenResponseRequested, isIdTokenResponseRequested);
         if (oAuth2AuthCode == null) {
             synchronized (authCodeCache) {
-                oAuth2AuthCode = getAuthCodeForClientAndUser(clientId, authenticatedUser);
+                oAuth2AuthCode = getExistingAuthCode(clientId, authenticatedUser, isTokenResponseRequested, isIdTokenResponseRequested);
                 if (oAuth2AuthCode == null) {
                     String authorizationCodeStr = authCodeGenerator.generate(AUTH_CODE_LENGTH);
                     while (authCodeCache.has(authorizationCodeStr)) {
@@ -104,6 +107,19 @@ public class AuthorizationService {
 
                     oAuth2AuthCode = new OAuth2AuthCode(authorizationCodeStr, clientId, resolvedScopes, redirectUri,
                             authenticatedUser);
+
+                    if (authorizationRequest.isOpenIdConnectAuthRequest()) {
+                        oAuth2AuthCode.setNonce(oidcAuthenticationRequest.getNonce());
+                    }
+
+                    if (isTokenResponseRequested) {
+                        oAuth2AuthCode.setAccessToken(createAccessToken(clientId, authenticatedUser, resolvedScopes));
+                    }
+
+                    if (isIdTokenResponseRequested) {
+                        oAuth2AuthCode.setIdToken(createIdToken(clientId, authenticatedUser, oidcAuthenticationRequest.getNonce()));
+                    }
+
                     authCodeCache.set(authorizationCodeStr, oAuth2AuthCode);
                 }
             }
@@ -113,7 +129,14 @@ public class AuthorizationService {
     }
 
     @Transactional
-    public OAuth2TokenResponse getTokenResponseForImplicitGrant(String clientId, Set<String> requestedScopes, AuthenticatedUser authenticatedUser) {
+    public OAuth2TokenResponse getTokenResponseForImplicitGrant(AuthorizationRequest authorizationRequest, AuthenticatedUser authenticatedUser) {
+
+        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = authorizationRequest.getOAuth2AuthorizationRequest();
+        OidcAuthenticationRequest oidcAuthenticationRequest = authorizationRequest.getOidcAuthenticationRequest();
+
+        String clientId = oAuth2AuthorizationRequest.getClientId();
+        Set<String> requestedScopes = AuthorizationUtils.getScopes(oAuth2AuthorizationRequest.getScope());
+        Set<AuthorizationResponseType> responseTypes = oAuth2AuthorizationRequest.getResponseTypes();
 
         PlatformClient client = getPlatformClientFromClientId(clientId);
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.IMPLICIT)) {
@@ -121,10 +144,23 @@ public class AuthorizationService {
                     "token using implicit grant.", clientId), clientId, OAuth2GrantType.IMPLICIT.name().toLowerCase());
         }
 
-        Set<String> resolvedScopes = getResolvedClientScope(client, requestedScopes);
-        String token = createAccessToken(clientId, authenticatedUser, resolvedScopes);
+        boolean isTokenResponseRequested = responseTypes.contains(OAuth2ResponseType.TOKEN);
+        boolean isIdTokenResponseRequested = authorizationRequest.isOpenIdConnectAuthRequest() && responseTypes.contains(OidcResponseType.ID_TOKEN);
 
-        return createOauth2TokenResponse(token, resolvedScopes);
+        Set<String> resolvedScopes = Collections.emptySet();
+        String token = null;
+        String idToken = null;
+
+        if (isTokenResponseRequested) {
+            resolvedScopes = getResolvedClientScope(client, requestedScopes);
+            token = createAccessToken(clientId, authenticatedUser, resolvedScopes);
+        }
+
+        if (isIdTokenResponseRequested) {
+            idToken = createIdToken(clientId, authenticatedUser, oidcAuthenticationRequest.getNonce());
+        }
+
+        return createOauth2TokenResponse(token, null, idToken, resolvedScopes);
     }
 
     @Transactional
@@ -151,8 +187,24 @@ public class AuthorizationService {
         }
 
         authCodeCache.evict(code); // Evict the code so nobody can use it again
+
+        Set<String> resolvedScopes = oAuth2AuthCode.getResolvedScopes();
         String token = createAccessToken(client.getClientId(), oAuth2AuthCode.getAuthenticatedUser(), oAuth2AuthCode.getResolvedScopes());
-        return createOauth2TokenResponse(token, oAuth2AuthCode.getResolvedScopes());
+        String idToken = null;
+
+        if (resolvedScopes.contains(AuthenticationUtils.OPEN_ID_SCOPE)) {
+            if (oAuth2AuthCode.getAccessToken() != null) {
+                token = oAuth2AuthCode.getAccessToken();
+            }
+
+            if (oAuth2AuthCode.getIdToken() != null) {
+                idToken = oAuth2AuthCode.getIdToken();
+            } else {
+                idToken = createIdToken(clientId, oAuth2AuthCode.getAuthenticatedUser(), oAuth2AuthCode.getNonce());
+            }
+        }
+
+        return createOauth2TokenResponse(token, null, idToken, resolvedScopes);
     }
 
     @Transactional
@@ -291,11 +343,19 @@ public class AuthorizationService {
         return requestedScopes;
     }
 
-    private OAuth2AuthCode getAuthCodeForClientAndUser(String clientId, AuthenticatedUser authenticatedUser) {
-        return authCodeCache.values().stream()
-                .filter(code -> Objects.equals(code.getClientId(), clientId) && Objects.equals(code.getAuthenticatedUser(), authenticatedUser))
-                .findFirst()
-                .orElse(null);
+    private OAuth2AuthCode getExistingAuthCode(String clientId, AuthenticatedUser authenticatedUser, boolean shouldHaveToken, boolean shouldHaveIdToken) {
+        Stream<OAuth2AuthCode> authCodeStream = authCodeCache.values().stream()
+                .filter(code -> Objects.equals(code.getClientId(), clientId) && Objects.equals(code.getAuthenticatedUser(), authenticatedUser));
+
+        if (shouldHaveToken) {
+            authCodeStream = authCodeStream.filter(code -> Objects.nonNull(code.getAccessToken()));
+        }
+
+        if (shouldHaveIdToken) {
+            authCodeStream = authCodeStream.filter(code -> Objects.nonNull(code.getIdToken()));
+        }
+
+        return authCodeStream.findFirst().orElse(null);
     }
 
     private String createAccessToken(String clientId, AuthenticatedUser authenticatedUser, Set<String> scopes) {
@@ -319,17 +379,30 @@ public class AuthorizationService {
         }
     }
 
+    private String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String nonce) {
+        try {
+            return tokenService.createIdToken(clientId, authenticatedUser, nonce, TOKEN_EXPIRY_TIME_SECONDS);
+        } catch (TokenException e) {
+            throw new AuthorizationException("Failed to create a new ID token", e);
+        }
+    }
+
     private OAuth2TokenResponse createOauth2TokenResponse(String accessToken, Set<String> scopes) {
         return createOauth2TokenResponse(accessToken, null, scopes);
     }
 
     private OAuth2TokenResponse createOauth2TokenResponse(String accessToken, String refreshToken, Set<String> scopes) {
+        return createOauth2TokenResponse(accessToken, refreshToken, null, scopes);
+    }
+
+    private OAuth2TokenResponse createOauth2TokenResponse(String accessToken, String refreshToken, String idToken, Set<String> scopes) {
         OAuth2TokenResponse oAuth2TokenResponse = new OAuth2TokenResponse();
         oAuth2TokenResponse.setAccessToken(accessToken);
         oAuth2TokenResponse.setRefreshToken(refreshToken);
+        oAuth2TokenResponse.setIdToken(idToken);
         oAuth2TokenResponse.setExpiryTime(TOKEN_EXPIRY_TIME_SECONDS);
         oAuth2TokenResponse.setTokenType("bearer");
-        oAuth2TokenResponse.setScope(scopes.isEmpty() ? null : String.join(" ", scopes));
+        oAuth2TokenResponse.setScope(StringUtils.isEmpty(accessToken) || scopes.isEmpty() ? null : String.join(" ", scopes));
         return oAuth2TokenResponse;
     }
 }

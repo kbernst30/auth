@@ -4,6 +4,8 @@ import ca.bernstein.models.authentication.oidc.OidcAuthenticationRequest;
 import ca.bernstein.models.common.AuthorizationRequest;
 import ca.bernstein.models.oauth.OAuth2AuthorizationRequest;
 
+import java.util.Base64;
+
 public final class TestUtils {
 
     public static final int SAMPLE_USER_ID = 1;
@@ -42,5 +44,10 @@ public final class TestUtils {
         authorizationRequest.setOidcAuthenticationRequest(oidcAuthenticationRequest);
 
         return authorizationRequest;
+    }
+
+    public static String createSampleBasicAuthHeader() {
+        String authDetails = TestUtils.SAMPLE_CLIENT_ID + ":" + TestUtils.SAMPLE_CLIENT_SECRET;
+        return "Basic " + new String(Base64.getEncoder().encode(authDetails.getBytes()));
     }
 }

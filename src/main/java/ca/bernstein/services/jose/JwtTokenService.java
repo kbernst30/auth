@@ -3,6 +3,7 @@ package ca.bernstein.services.jose;
 import ca.bernstein.exceptions.authorization.SigningKeyException;
 import ca.bernstein.exceptions.authorization.TokenException;
 import ca.bernstein.factories.jose.JwsAlgorithmFactory;
+import ca.bernstein.models.authentication.AuthenticatedUser;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.JWTVerifier;
@@ -10,9 +11,12 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 
 import javax.inject.Inject;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -71,6 +75,31 @@ public class JwtTokenService implements TokenService {
     }
 
     @Override
+    public String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String nonce, int expiryTimeSeconds) throws TokenException {
+        JWTCreator.Builder jwtCreator = JWT.create();
+        Date now = new Date();
+
+        jwtCreator.withIssuer("http://localhost:8080/"); // TODO get actual issuer - config or detect?
+        jwtCreator.withSubject(getSubjectIdentifierForUser(authenticatedUser));
+        jwtCreator.withAudience(clientId);
+        jwtCreator.withExpiresAt(new DateTime(now).plusSeconds(expiryTimeSeconds).toDate());
+        jwtCreator.withIssuedAt(now);
+
+        if (!StringUtils.isEmpty(nonce)) {
+            jwtCreator.withClaim("nonce", nonce);
+        }
+
+        jwtCreator.withClaim("username", authenticatedUser.getUsername());
+        jwtCreator.withClaim("account_id", authenticatedUser.getUserId());
+
+        try {
+            return jwtCreator.sign(jwsAlgorithmFactory.createAlgorithmForSignature());
+        } catch (SigningKeyException e) {
+            throw new TokenException("Failed to create a JWT due to a problem with the signing key", e);
+        }
+    }
+
+    @Override
     public boolean isTokenValid(String token) {
         try {
             for (Algorithm algorithm : jwsAlgorithmFactory.createAlgorithmsForVerification()) {
@@ -97,5 +126,18 @@ public class JwtTokenService implements TokenService {
     public String getTokenClaim(String token, String claim) {
         DecodedJWT decodedAccessToken = JWT.decode(token);
         return decodedAccessToken.getClaim(claim).asString();
+    }
+
+    private String getSubjectIdentifierForUser(AuthenticatedUser authenticatedUser) throws TokenException {
+        MessageDigest sha256;
+        try {
+            sha256 = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new TokenException("Unable to generate subject identifier for user", e);
+        }
+
+        String salt = authenticatedUser.getUsername() + ":" + authenticatedUser.getUserId(); // TODO more secure/random salt
+        byte[] hash = sha256.digest(salt.getBytes());
+        return UUID.nameUUIDFromBytes(hash).toString();
     }
 }

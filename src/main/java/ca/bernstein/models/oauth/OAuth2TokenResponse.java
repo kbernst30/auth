@@ -17,7 +17,7 @@ public class OAuth2TokenResponse {
     @Getter @Setter private String accessToken;
 
     @JsonProperty("expires_in")
-    @Getter @Setter private int expiryTime;
+    @Getter @Setter private Integer expiryTime;
 
     @JsonProperty("token_type")
     @Getter @Setter private String tokenType;

@@ -1,11 +1,10 @@
 package ca.bernstein.resources;
 
 import ca.bernstein.models.authentication.AuthenticatedUser;
-import ca.bernstein.models.authentication.oidc.OidcAuthenticationRequest;
 import ca.bernstein.models.common.AuthorizationRequest;
-import ca.bernstein.models.oauth.OAuth2AuthCode;
-import ca.bernstein.models.oauth.OAuth2AuthorizationRequest;
-import ca.bernstein.models.oauth.OAuth2TokenResponse;
+import ca.bernstein.models.common.AuthorizationResponseType;
+import ca.bernstein.models.common.BasicAuthorizationDetails;
+import ca.bernstein.models.oauth.*;
 import ca.bernstein.resources.authorization.AuthorizationResource;
 import ca.bernstein.services.authorization.AuthorizationService;
 import ca.bernstein.util.AuthenticationUtils;
@@ -83,8 +82,8 @@ public class AuthorizationResourceTest {
     public void getOAuth2Authorization_implicitAccessToken_isSuccessful() {
         AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("token");
         OAuth2TokenResponse oAuth2TokenResponse = createSampleTokenResponse(true, false, false);
-        Mockito.when(mockAuthorizationService.getTokenResponseForImplicitGrant(Mockito.eq(TestUtils.SAMPLE_CLIENT_ID),
-                Mockito.anySetOf(String.class), Mockito.eq(SAMPLE_AUTHENTICATED_USER))).thenReturn(oAuth2TokenResponse);
+        Mockito.when(mockAuthorizationService.getTokenResponseForImplicitGrant(Mockito.any(AuthorizationRequest.class),
+                Mockito.eq(SAMPLE_AUTHENTICATED_USER))).thenReturn(oAuth2TokenResponse);
 
         Response response = authorizationResource.getOAuth2Authorization(authorizationRequest, mockHttpSession, mockUriInfo);
 
@@ -113,8 +112,8 @@ public class AuthorizationResourceTest {
     public void getOAuth2Authorization_implicitIdToken_isSuccessful() {
         AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("id_token", true);
         OAuth2TokenResponse oAuth2TokenResponse = createSampleTokenResponse(false, true, false);
-        Mockito.when(mockAuthorizationService.getTokenResponseForImplicitGrant(Mockito.eq(TestUtils.SAMPLE_CLIENT_ID),
-                Mockito.anySetOf(String.class), Mockito.eq(SAMPLE_AUTHENTICATED_USER))).thenReturn(oAuth2TokenResponse);
+        Mockito.when(mockAuthorizationService.getTokenResponseForImplicitGrant(Mockito.any(AuthorizationRequest.class),
+                Mockito.eq(SAMPLE_AUTHENTICATED_USER))).thenReturn(oAuth2TokenResponse);
 
         Response response = authorizationResource.getOAuth2Authorization(authorizationRequest, mockHttpSession, mockUriInfo);
 
@@ -143,8 +142,8 @@ public class AuthorizationResourceTest {
     public void getOAuth2Authorization_implicitAccessAndIdToken_isSuccessful() {
         AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("id_token token", true);
         OAuth2TokenResponse oAuth2TokenResponse = createSampleTokenResponse(true, true, false);
-        Mockito.when(mockAuthorizationService.getTokenResponseForImplicitGrant(Mockito.eq(TestUtils.SAMPLE_CLIENT_ID),
-                Mockito.anySetOf(String.class), Mockito.eq(SAMPLE_AUTHENTICATED_USER))).thenReturn(oAuth2TokenResponse);
+        Mockito.when(mockAuthorizationService.getTokenResponseForImplicitGrant(Mockito.any(AuthorizationRequest.class),
+                Mockito.eq(SAMPLE_AUTHENTICATED_USER))).thenReturn(oAuth2TokenResponse);
 
         Response response = authorizationResource.getOAuth2Authorization(authorizationRequest, mockHttpSession, mockUriInfo);
 
@@ -256,6 +255,113 @@ public class AuthorizationResourceTest {
         Assert.assertTrue(responseFragment.contains("scope=" + String.join(" ", oAuth2AuthCode.getResolvedScopes())));
     }
 
+    @Test
+    public void getOAuth2Token_authCodeGrant_isSuccessful() {
+        OAuth2TokenRequest oAuth2TokenRequest = createSampleTokenRequest(OAuth2GrantType.AUTHORIZATION_CODE);
+        oAuth2TokenRequest.setCode(TestUtils.SAMPLE_CODE);
+        oAuth2TokenRequest.setRedirectUri(TestUtils.SAMPLE_VALID_REDIRECT_URI);
+
+        OAuth2TokenResponse oAuth2TokenResponse = createSampleTokenResponse(true, false, false);
+        Mockito.when(mockAuthorizationService.getTokenResponseForAuthorizationCodeGrant(Mockito.anyString(),
+                Mockito.any(BasicAuthorizationDetails.class), Mockito.anyString())).thenReturn(oAuth2TokenResponse);
+
+        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest);
+        Object responseEntity = response.getEntity();
+
+        Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+        Assert.assertEquals(responseEntity.getClass(), OAuth2TokenResponse.class);
+
+        OAuth2TokenResponse tokenResponseEntity = (OAuth2TokenResponse) responseEntity;
+
+        Assert.assertEquals(tokenResponseEntity.getAccessToken(), TestUtils.SAMPLE_ACCESS_TOKEN);
+        Assert.assertTrue(tokenResponseEntity.getExpiryTime() > 0);
+        Assert.assertNull(tokenResponseEntity.getRefreshToken());
+        Assert.assertNull(tokenResponseEntity.getIdToken());
+        Assert.assertEquals(tokenResponseEntity.getTokenType(), "bearer");
+        Assert.assertNotNull(tokenResponseEntity.getScope());
+        Assert.assertTrue(!StringUtils.isEmpty(tokenResponseEntity.getScope()));
+    }
+
+    @Test
+    public void getOAuth2Token_clientCredentialsGrant_isSuccessful() {
+        OAuth2TokenRequest oAuth2TokenRequest = createSampleTokenRequest(OAuth2GrantType.CLIENT_CREDENTIALS);
+
+        OAuth2TokenResponse oAuth2TokenResponse = createSampleTokenResponse(true, false, false);
+        Mockito.when(mockAuthorizationService.getTokenResponseForClientCredentialsGrant(Mockito.any(BasicAuthorizationDetails.class),
+                Mockito.anySetOf(String.class))).thenReturn(oAuth2TokenResponse);
+
+        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest);
+        Object responseEntity = response.getEntity();
+
+        Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+        Assert.assertEquals(responseEntity.getClass(), OAuth2TokenResponse.class);
+
+        OAuth2TokenResponse tokenResponseEntity = (OAuth2TokenResponse) responseEntity;
+
+        Assert.assertEquals(tokenResponseEntity.getAccessToken(), TestUtils.SAMPLE_ACCESS_TOKEN);
+        Assert.assertTrue(tokenResponseEntity.getExpiryTime() > 0);
+        Assert.assertNull(tokenResponseEntity.getRefreshToken());
+        Assert.assertNull(tokenResponseEntity.getIdToken());
+        Assert.assertEquals(tokenResponseEntity.getTokenType(), "bearer");
+        Assert.assertNotNull(tokenResponseEntity.getScope());
+        Assert.assertTrue(!StringUtils.isEmpty(tokenResponseEntity.getScope()));
+    }
+
+    @Test
+    public void getOAuth2Token_passwordGrant_isSuccessful() {
+        OAuth2TokenRequest oAuth2TokenRequest = createSampleTokenRequest(OAuth2GrantType.PASSWORD);
+        oAuth2TokenRequest.setUsername(TestUtils.SAMPLE_USER_EMAIL);
+        oAuth2TokenRequest.setPassword(TestUtils.SAMPLE_USER_PASSWORD);
+
+        OAuth2TokenResponse oAuth2TokenResponse = createSampleTokenResponse(true, false, true);
+        Mockito.when(mockAuthorizationService.getTokenResponseForPasswordGrant(Mockito.any(BasicAuthorizationDetails.class),
+                Mockito.anyString(), Mockito.anyString(), Mockito.anySetOf(String.class))).thenReturn(oAuth2TokenResponse);
+
+        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest);
+        Object responseEntity = response.getEntity();
+
+        Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+        Assert.assertEquals(responseEntity.getClass(), OAuth2TokenResponse.class);
+
+        OAuth2TokenResponse tokenResponseEntity = (OAuth2TokenResponse) responseEntity;
+
+        Assert.assertEquals(tokenResponseEntity.getAccessToken(), TestUtils.SAMPLE_ACCESS_TOKEN);
+        Assert.assertTrue(tokenResponseEntity.getExpiryTime() > 0);
+        Assert.assertNotNull(tokenResponseEntity.getRefreshToken());
+        Assert.assertEquals(tokenResponseEntity.getRefreshToken(), TestUtils.SAMPLE_REFRESH_TOKEN);
+        Assert.assertNull(tokenResponseEntity.getIdToken());
+        Assert.assertEquals(tokenResponseEntity.getTokenType(), "bearer");
+        Assert.assertNotNull(tokenResponseEntity.getScope());
+        Assert.assertTrue(!StringUtils.isEmpty(tokenResponseEntity.getScope()));
+    }
+
+    @Test
+    public void getOAuth2Token_refreshTokenGrant_isSuccessful() {
+        OAuth2TokenRequest oAuth2TokenRequest = createSampleTokenRequest(OAuth2GrantType.REFRESH_TOKEN);
+        oAuth2TokenRequest.setRefreshToken(TestUtils.SAMPLE_REFRESH_TOKEN);
+
+        OAuth2TokenResponse oAuth2TokenResponse = createSampleTokenResponse(true, false, true);
+        Mockito.when(mockAuthorizationService.getTokenResponseForRefreshTokenGrant(Mockito.any(BasicAuthorizationDetails.class),
+                Mockito.anyString())).thenReturn(oAuth2TokenResponse);
+
+        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest);
+        Object responseEntity = response.getEntity();
+
+        Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+        Assert.assertEquals(responseEntity.getClass(), OAuth2TokenResponse.class);
+
+        OAuth2TokenResponse tokenResponseEntity = (OAuth2TokenResponse) responseEntity;
+
+        Assert.assertEquals(tokenResponseEntity.getAccessToken(), TestUtils.SAMPLE_ACCESS_TOKEN);
+        Assert.assertTrue(tokenResponseEntity.getExpiryTime() > 0);
+        Assert.assertNotNull(tokenResponseEntity.getRefreshToken());
+        Assert.assertEquals(tokenResponseEntity.getRefreshToken(), TestUtils.SAMPLE_REFRESH_TOKEN);
+        Assert.assertNull(tokenResponseEntity.getIdToken());
+        Assert.assertEquals(tokenResponseEntity.getTokenType(), "bearer");
+        Assert.assertNotNull(tokenResponseEntity.getScope());
+        Assert.assertTrue(!StringUtils.isEmpty(tokenResponseEntity.getScope()));
+    }
+
     private OAuth2AuthCode createSampleAuthCode(boolean withAccessToken, boolean withIdToken) {
         OAuth2AuthCode oAuth2AuthCode = new OAuth2AuthCode(TestUtils.SAMPLE_CODE, TestUtils.SAMPLE_CLIENT_ID,
                 Stream.of(TestUtils.SAMPLE_SCOPE).collect(Collectors.toSet()), TestUtils.SAMPLE_VALID_REDIRECT_URI,
@@ -293,4 +399,9 @@ public class AuthorizationResourceTest {
         return oAuth2TokenResponse;
     }
 
+    private OAuth2TokenRequest createSampleTokenRequest(OAuth2GrantType oAuth2GrantType) {
+        OAuth2TokenRequest oAuth2TokenRequest = new OAuth2TokenRequest();
+        oAuth2TokenRequest.setGrantType(oAuth2GrantType);
+        return oAuth2TokenRequest;
+    }
 }

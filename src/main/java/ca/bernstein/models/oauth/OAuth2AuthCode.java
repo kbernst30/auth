@@ -3,6 +3,7 @@ package ca.bernstein.models.oauth;
 import ca.bernstein.models.authentication.AuthenticatedUser;
 import lombok.*;
 
+import javax.ws.rs.QueryParam;
 import java.io.Serializable;
 import java.util.Set;
 
@@ -50,6 +51,11 @@ public class OAuth2AuthCode implements Serializable {
      * An authenticated user that the code is generated on behalf of
      */
     @Getter @Setter private AuthenticatedUser authenticatedUser;
+
+    /**
+     * A value used to associate a client session with an ID Token
+     */
+    @Getter @Setter private String nonce;
 
     /**
      * The ID token associated with this authorization code

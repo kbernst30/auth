@@ -83,11 +83,10 @@ public class AuthorizationResource {
 
         AuthenticatedUser authenticatedUser = AuthenticationUtils.getUserFromSession(session);
 
-        // TODO rethink this as there are possible combinations of response types
         if (authorizationResponseTypes.contains(OAuth2ResponseType.CODE)) {
             return getOAuth2AuthorizationCodeResponse(authorizationRequest, authenticatedUser);
         } else {
-            return getOauth2AuthorizationTokenResponse(oAuth2AuthorizationRequest, authenticatedUser);
+            return getOauth2AuthorizationTokenResponse(authorizationRequest, authenticatedUser);
         }
     }
 
@@ -170,12 +169,12 @@ public class AuthorizationResource {
         return Response.temporaryRedirect(resolvedRedirectUri).build();
     }
 
-    private Response getOauth2AuthorizationTokenResponse(OAuth2AuthorizationRequest oAuth2AuthorizationRequest,
+    private Response getOauth2AuthorizationTokenResponse(AuthorizationRequest authorizationRequest,
                                                          AuthenticatedUser authenticatedUser) throws AuthorizationException {
 
-        Set<String> requestedScopes = AuthorizationUtils.getScopes(oAuth2AuthorizationRequest.getScope());
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForImplicitGrant(oAuth2AuthorizationRequest.getClientId(),
-                requestedScopes, authenticatedUser);
+        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = authorizationRequest.getOAuth2AuthorizationRequest();
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForImplicitGrant(authorizationRequest,
+                authenticatedUser);
 
         URI requestedUri = URI.create(oAuth2AuthorizationRequest.getRedirectUri());
         URI resolvedRedirectUri = UriBuilder.fromUri(requestedUri)

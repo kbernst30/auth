@@ -1,6 +1,7 @@
 package ca.bernstein.services.jose;
 
 import ca.bernstein.exceptions.authorization.TokenException;
+import ca.bernstein.models.authentication.AuthenticatedUser;
 
 import java.util.Map;
 
@@ -25,6 +26,18 @@ public interface TokenService {
      * @throws TokenException
      */
     String createRefreshToken(String accessToken) throws TokenException;
+
+    /**
+     * Generates an ID token as described by OpenID Connect Core specification
+     * @see <a href="http://openid.net/specs/openid-connect-core-1_0.html#rfc.section.3.1.2.1">OpenID Connect Core Specification</a>
+     * @param clientId the ID of the client requesting the token
+     * @param authenticatedUser the authentication details to create the token for
+     * @param nonce the passed request nonce value, used to associate a session with the token
+     * @param expiryTimeSeconds the amount of time in seconds that the token will be valid for
+     * @return a new ID token string
+     * @throws TokenException
+     */
+    String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String nonce, int expiryTimeSeconds) throws TokenException;
 
     /**
      * Examines a given token to determine if it is still valid for use
