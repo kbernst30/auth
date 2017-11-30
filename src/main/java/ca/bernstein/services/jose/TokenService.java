@@ -33,12 +33,13 @@ public interface TokenService {
      * @param clientId the ID of the client requesting the token
      * @param authenticatedUser the authentication details to create the token for
      * @param accessToken the access token that is being issued with this ID token
+     * @param code the authorization code that is being issued with this ID token from the authorization endpoint
      * @param nonce the passed request nonce value, used to associate a session with the token
      * @param expiryTimeSeconds the amount of time in seconds that the token will be valid for
      * @return a new ID token string
      * @throws TokenException
      */
-    String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String accessToken,
+    String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String accessToken, String code,
                          String nonce, int expiryTimeSeconds) throws TokenException;
 
     /**

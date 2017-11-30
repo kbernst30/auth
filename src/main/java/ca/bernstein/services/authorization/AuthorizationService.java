@@ -117,7 +117,8 @@ public class AuthorizationService {
                     }
 
                     if (isIdTokenResponseRequested) {
-                        oAuth2AuthCode.setIdToken(createIdToken(clientId, authenticatedUser, oAuth2AuthCode.getAccessToken(), oidcAuthenticationRequest.getNonce()));
+                        oAuth2AuthCode.setIdToken(createIdToken(clientId, authenticatedUser, oAuth2AuthCode.getAccessToken(),
+                                oAuth2AuthCode.getCode(), oidcAuthenticationRequest.getNonce()));
                     }
 
                     authCodeCache.set(authorizationCodeStr, oAuth2AuthCode);
@@ -157,7 +158,7 @@ public class AuthorizationService {
         }
 
         if (isIdTokenResponseRequested) {
-            idToken = createIdToken(clientId, authenticatedUser, token, oidcAuthenticationRequest.getNonce());
+            idToken = createIdToken(clientId, authenticatedUser, token, null, oidcAuthenticationRequest.getNonce());
         }
 
         return createOauth2TokenResponse(token, null, idToken, resolvedScopes);
@@ -200,7 +201,7 @@ public class AuthorizationService {
             if (oAuth2AuthCode.getIdToken() != null) {
                 idToken = oAuth2AuthCode.getIdToken();
             } else {
-                idToken = createIdToken(clientId, oAuth2AuthCode.getAuthenticatedUser(), token, oAuth2AuthCode.getNonce());
+                idToken = createIdToken(clientId, oAuth2AuthCode.getAuthenticatedUser(), token, code, oAuth2AuthCode.getNonce());
             }
         }
 
@@ -379,9 +380,9 @@ public class AuthorizationService {
         }
     }
 
-    private String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String accessToken, String nonce) {
+    private String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String accessToken, String code, String nonce) {
         try {
-            return tokenService.createIdToken(clientId, authenticatedUser, accessToken, nonce, TOKEN_EXPIRY_TIME_SECONDS);
+            return tokenService.createIdToken(clientId, authenticatedUser, accessToken, code, nonce, TOKEN_EXPIRY_TIME_SECONDS);
         } catch (TokenException e) {
             throw new AuthorizationException("Failed to create a new ID token", e);
         }

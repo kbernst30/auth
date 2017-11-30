@@ -18,7 +18,6 @@ import javax.inject.Inject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.stream.Stream;
 
 @Slf4j
 public class JwtTokenService implements TokenService {
@@ -74,7 +73,7 @@ public class JwtTokenService implements TokenService {
     }
 
     @Override
-    public String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String accessToken,
+    public String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String accessToken, String code,
                                 String nonce, int expiryTimeSeconds) throws TokenException {
 
         JWTCreator.Builder jwtCreator = JWT.create();
@@ -97,7 +96,11 @@ public class JwtTokenService implements TokenService {
             Algorithm idTokenAlgorithm = jwsAlgorithmFactory.createAlgorithmForSignature();
 
             if (!StringUtils.isEmpty(accessToken)) {
-                jwtCreator.withClaim("at_hash", getAccessTokenHashForIdToken(accessToken, idTokenAlgorithm));
+                jwtCreator.withClaim("at_hash", getHashFromSourceForIdToken(accessToken, idTokenAlgorithm));
+            }
+
+            if (!StringUtils.isEmpty(code)) {
+                jwtCreator.withClaim("c_hash", getHashFromSourceForIdToken(code, idTokenAlgorithm));
             }
 
             return jwtCreator.sign(idTokenAlgorithm);
@@ -148,18 +151,14 @@ public class JwtTokenService implements TokenService {
         return UUID.nameUUIDFromBytes(hash).toString();
     }
 
-    private String getAccessTokenHashForIdToken(String accessToken, Algorithm algorithm) throws TokenException {
+    private String getHashFromSourceForIdToken(String source, Algorithm algorithm) {
         // Hash the token with the algorithm provided (same as used to sign ID token)
-        byte[] hashedTokenBytes = algorithm.sign(accessToken.getBytes());
+        byte[] hashedTokenBytes = algorithm.sign(source.getBytes());
 
-        // Take the left most 128 bits (first 16 bytes)
-        if (hashedTokenBytes.length < 16) {
-            throw new TokenException(String.format("Unable to get access token hash for ID token using algorithim [%s]",
-                    algorithm.getName()));
-        }
-
-        byte[] significantBytes = new byte[16];
-        System.arraycopy(hashedTokenBytes, 0, significantBytes, 0, 16);
+        // Take the left most half of the hash. For example, if there are 256 bits (from SHA-256 maybe) then take 128 bits
+        int bytesToTake = hashedTokenBytes.length / 2;
+        byte[] significantBytes = new byte[bytesToTake];
+        System.arraycopy(hashedTokenBytes, 0, significantBytes, 0, bytesToTake);
 
         return new String(Base64.getEncoder().encode(significantBytes));
     }
