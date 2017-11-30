@@ -72,7 +72,7 @@ public class AuthorizationServiceTest {
         Mockito.when(mockTokenService.createAccessToken(Mockito.anyMapOf(String.class, String.class), Mockito.anyInt()))
                 .thenReturn(TestUtils.SAMPLE_ACCESS_TOKEN);
         Mockito.when(mockTokenService.createIdToken(Mockito.anyString(), Mockito.any(AuthenticatedUser.class),
-                Mockito.anyString(), Mockito.anyInt())).thenReturn(TestUtils.SAMPLE_ID_TOKEN);
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyInt())).thenReturn(TestUtils.SAMPLE_ID_TOKEN);
         Mockito.when(mockTokenService.getTokenClaim(Mockito.anyString(), Mockito.eq("account_id")))
                 .thenReturn(String.valueOf(TestUtils.SAMPLE_USER_ID));
         Mockito.when(mockTokenService.getTokenClaim(Mockito.anyString(), Mockito.eq("scope"))).thenReturn(TestUtils.SAMPLE_SCOPE);

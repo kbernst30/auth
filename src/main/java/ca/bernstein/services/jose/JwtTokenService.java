@@ -17,9 +17,8 @@ import org.joda.time.DateTime;
 import javax.inject.Inject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Stream;
 
 @Slf4j
 public class JwtTokenService implements TokenService {
@@ -75,7 +74,9 @@ public class JwtTokenService implements TokenService {
     }
 
     @Override
-    public String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String nonce, int expiryTimeSeconds) throws TokenException {
+    public String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String accessToken,
+                                String nonce, int expiryTimeSeconds) throws TokenException {
+
         JWTCreator.Builder jwtCreator = JWT.create();
         Date now = new Date();
 
@@ -93,7 +94,13 @@ public class JwtTokenService implements TokenService {
         jwtCreator.withClaim("account_id", authenticatedUser.getUserId());
 
         try {
-            return jwtCreator.sign(jwsAlgorithmFactory.createAlgorithmForSignature());
+            Algorithm idTokenAlgorithm = jwsAlgorithmFactory.createAlgorithmForSignature();
+
+            if (!StringUtils.isEmpty(accessToken)) {
+                jwtCreator.withClaim("at_hash", getAccessTokenHashForIdToken(accessToken, idTokenAlgorithm));
+            }
+
+            return jwtCreator.sign(idTokenAlgorithm);
         } catch (SigningKeyException e) {
             throw new TokenException("Failed to create a JWT due to a problem with the signing key", e);
         }
@@ -139,5 +146,21 @@ public class JwtTokenService implements TokenService {
         String salt = authenticatedUser.getUsername() + ":" + authenticatedUser.getUserId(); // TODO more secure/random salt
         byte[] hash = sha256.digest(salt.getBytes());
         return UUID.nameUUIDFromBytes(hash).toString();
+    }
+
+    private String getAccessTokenHashForIdToken(String accessToken, Algorithm algorithm) throws TokenException {
+        // Hash the token with the algorithm provided (same as used to sign ID token)
+        byte[] hashedTokenBytes = algorithm.sign(accessToken.getBytes());
+
+        // Take the left most 128 bits (first 16 bytes)
+        if (hashedTokenBytes.length < 16) {
+            throw new TokenException(String.format("Unable to get access token hash for ID token using algorithim [%s]",
+                    algorithm.getName()));
+        }
+
+        byte[] significantBytes = new byte[16];
+        System.arraycopy(hashedTokenBytes, 0, significantBytes, 0, 16);
+
+        return new String(Base64.getEncoder().encode(significantBytes));
     }
 }
