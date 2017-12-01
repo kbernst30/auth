@@ -17,7 +17,7 @@ public class LoginRequest {
     /**
      * The unique identifying email of the user attempting authentication
      */
-    @FormParam("email")
+    @FormParam("username")
     @Getter @Setter private String username;
 
     /**

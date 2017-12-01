@@ -14,6 +14,7 @@ public final class TestUtils {
     public static final String SAMPLE_CLIENT_ID = "my-client";
     public static final String SAMPLE_CLIENT_SECRET = "my-secret";
     public static final String SAMPLE_VALID_REDIRECT_URI = "http://testuri.com/?a=test&b=test";
+    public static final String SAMPLE_SECOND_VALID_REDIRECT_URI = "http://testuri2.com/";
     public static final String SAMPLE_CODE = "0123456789abcdef";
     public static final String SAMPLE_ACCESS_TOKEN = "testaccesstoken";
     public static final String SAMPLE_REFRESH_TOKEN = "testrefreshtoken";

@@ -65,7 +65,8 @@ public final class HibernateConfigurationUtil {
                     .addAnnotatedClass(AllowedScope.class)
                     .addAnnotatedClass(AppKey.class)
                     .addAnnotatedClass(AppKeyConfig.class)
-                    .addAnnotatedClass(PlatformClient.class);
+                    .addAnnotatedClass(PlatformClient.class)
+                    .addAnnotatedClass(RedirectUri.class);
 
             sessionFactory = entitySources.getMetadataBuilder().build().getSessionFactoryBuilder().build();
         }

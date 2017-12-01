@@ -36,8 +36,9 @@ public final class ErrorType {
         REDIRECT_URI_HAS_FRAGMENT("invalid_request", "redirect_uri must not contain fragments"),
         SERVER_ERROR("server_error", "An unknown error occurred"),
         UNKNOWN_CLIENT_ID("invalid_request", "No client exists for given client_id: %s"),
-        UNSUPPORTED_RESPONSE_TYPE("unsupported_response_type", "response_type must be one of 'code' or 'token'"),
-        UNKNOWN_USER("invalid_request", "Username and password credentials are invalid.");
+        UNKNOWN_REDIRECT_URI("invalid_request", "The requested redirect_uri is not registered for this client."),
+        UNKNOWN_USER("invalid_request", "Username and password credentials are invalid."),
+        UNSUPPORTED_RESPONSE_TYPE("unsupported_response_type", "response_type must be one of 'code' or 'token'");
 
         @Getter private final String error;
         @Getter private final String message;

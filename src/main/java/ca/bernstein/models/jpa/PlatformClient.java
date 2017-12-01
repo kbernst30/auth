@@ -8,6 +8,7 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -44,6 +45,9 @@ public class PlatformClient implements Serializable {
 
     @Column(nullable = false, name = "auto_approve")
     @Getter @Setter private boolean autoApprove;
+
+    @OneToMany(mappedBy = "platformClient", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @Getter @Setter private List<RedirectUri> redirectUris;
 
     public Set<OAuth2GrantType> getAuthorizedGrantTypes() {
         return Stream.of(authorizedGrantTypesStr.split(","))

@@ -11,6 +11,7 @@ import ca.bernstein.models.common.AuthorizationResponseType;
 import ca.bernstein.models.jpa.AllowedScope;
 import ca.bernstein.models.jpa.PlatformClient;
 import ca.bernstein.models.common.BasicAuthorizationDetails;
+import ca.bernstein.models.jpa.RedirectUri;
 import ca.bernstein.models.oauth.*;
 import ca.bernstein.persistence.PlatformClientDao;
 import ca.bernstein.persistence.ScopeDao;
@@ -28,6 +29,7 @@ import org.apache.commons.text.RandomStringGenerator;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.net.URI;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -87,6 +89,8 @@ public class AuthorizationService {
                     "authorization code", clientId), clientId, OAuth2GrantType.AUTHORIZATION_CODE.name().toLowerCase());
         }
 
+        verifyRequestedRedirectUriIsAllowed(client.getRedirectUris(), redirectUri);
+
         Set<String> resolvedScopes = getResolvedClientScope(client, requestedScopes);
 
         boolean isTokenResponseRequested = authorizationRequest.isOpenIdConnectAuthRequest() && responseTypes.contains(OAuth2ResponseType.TOKEN);
@@ -138,12 +142,15 @@ public class AuthorizationService {
         String clientId = oAuth2AuthorizationRequest.getClientId();
         Set<String> requestedScopes = AuthorizationUtils.getScopes(oAuth2AuthorizationRequest.getScope());
         Set<AuthorizationResponseType> responseTypes = oAuth2AuthorizationRequest.getResponseTypes();
+        String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
 
         PlatformClient client = getPlatformClientFromClientId(clientId);
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.IMPLICIT)) {
             throw new UnauthorizedClientException(String.format("Client [%s] is not authorized to request a " +
                     "token using implicit grant.", clientId), clientId, OAuth2GrantType.IMPLICIT.name().toLowerCase());
         }
+
+        verifyRequestedRedirectUriIsAllowed(client.getRedirectUris(), redirectUri);
 
         boolean isTokenResponseRequested = responseTypes.contains(OAuth2ResponseType.TOKEN);
         boolean isIdTokenResponseRequested = authorizationRequest.isOpenIdConnectAuthRequest() && responseTypes.contains(OidcResponseType.ID_TOKEN);
@@ -308,6 +315,30 @@ public class AuthorizationService {
 
             throw new InvalidClientException(String.format("Client [%s] is invalid or the provided secret was " +
                     "incorrect.", client.getClientId()));
+        }
+    }
+
+    private void verifyRequestedRedirectUriIsAllowed(List<RedirectUri> registeredUris, String requestedUri) {
+        List<URI> registered = registeredUris.stream()
+                .map(RedirectUri::getValue)
+                .map(URI::create)
+                .collect(Collectors.toList());
+
+        URI requested = URI.create(requestedUri);
+
+        boolean foundValid = false;
+        for (URI uri : registered) {
+            // Disregard query parameters and fragments
+            boolean registeredDidMatch = uri.getScheme().equals(requested.getScheme())
+                    && uri.getHost().equals(requested.getHost())
+                    && uri.getPath().equals(requested.getPath())
+                    && uri.getPort() == requested.getPort();
+
+            foundValid |= registeredDidMatch;
+        }
+
+        if (!foundValid) {
+            throw new UnknownRedirectUriException("Requested redirectUri was not registered for client");
         }
     }
 

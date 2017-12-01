@@ -7,6 +7,7 @@ import ca.bernstein.models.common.BasicAuthorizationDetails;
 import ca.bernstein.models.jpa.Account;
 import ca.bernstein.models.jpa.AllowedScope;
 import ca.bernstein.models.jpa.PlatformClient;
+import ca.bernstein.models.jpa.RedirectUri;
 import ca.bernstein.models.oauth.*;
 import ca.bernstein.persistence.PlatformClientDao;
 import ca.bernstein.persistence.ScopeDao;
@@ -23,6 +24,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,6 +84,7 @@ public class AuthorizationServiceTest {
     public void resetForTests() throws Exception {
         SAMPLE_PLATFORM_CLIENT.setAuthorizedGrantTypes(Stream.of(OAuth2GrantType.values()).collect(Collectors.toSet()));
         SAMPLE_PLATFORM_CLIENT.setScope(TestUtils.SAMPLE_SCOPE);
+        SAMPLE_PLATFORM_CLIENT.setRedirectUris(getListOfSingleRedirectUri(TestUtils.SAMPLE_VALID_REDIRECT_URI));
 
         Mockito.when(mockAuthenticationService.authenticateAndGetUser(Mockito.anyString(), Mockito.anyString())).thenReturn(SAMPLE_AUTHENTICATED_USER);
 
@@ -103,6 +106,15 @@ public class AuthorizationServiceTest {
     public void generateAuthorizationCode_invalidScope_doesFail() {
         AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code");
         authorizationRequest.getOAuth2AuthorizationRequest().setScope("bad_scope");
+        authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
+    }
+
+    @Test(expected = OAuth2Exception.class)
+    public void generateAuthorizationCode_unknownRedirectUri_doesFail() {
+        // Change registered URIs of the client
+        SAMPLE_PLATFORM_CLIENT.setRedirectUris(getListOfSingleRedirectUri(TestUtils.SAMPLE_SECOND_VALID_REDIRECT_URI));
+
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code");
         authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
     }
 
@@ -183,6 +195,15 @@ public class AuthorizationServiceTest {
         SAMPLE_PLATFORM_CLIENT.setAuthorizedGrantTypes(Stream.of(OAuth2GrantType.values())
                 .filter(oAuth2GrantType -> !oAuth2GrantType.equals(OAuth2GrantType.IMPLICIT))
                 .collect(Collectors.toSet()));
+
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("token");
+        authorizationService.getTokenResponseForImplicitGrant(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
+    }
+
+    @Test(expected = OAuth2Exception.class)
+    public void getTokenResponseForImplicitGrant_unknownRedirectUri_doesFail() {
+        // Change registered URIs of the client
+        SAMPLE_PLATFORM_CLIENT.setRedirectUris(getListOfSingleRedirectUri(TestUtils.SAMPLE_SECOND_VALID_REDIRECT_URI));
 
         AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("token");
         authorizationService.getTokenResponseForImplicitGrant(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
@@ -384,5 +405,16 @@ public class AuthorizationServiceTest {
     private OAuth2AuthCode getNewOAuth2AuthCode(String responseType, boolean isOpenId) {
         AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest(responseType, isOpenId);
         return authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
+    }
+
+    private List<RedirectUri> getListOfSingleRedirectUri(String redirectUriStr) {
+        return Stream.of(redirectUriStr)
+                .map(uri -> {
+                    RedirectUri redirectUri = new RedirectUri();
+                    redirectUri.setPlatformClient(SAMPLE_PLATFORM_CLIENT);
+                    redirectUri.setValue(uri);
+                    return redirectUri;
+                })
+                .collect(Collectors.toList());
     }
 }
