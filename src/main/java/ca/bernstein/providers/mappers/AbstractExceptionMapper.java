@@ -8,9 +8,7 @@ import ca.bernstein.models.oauth.OAuth2ResponseType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.inject.Inject;
 import javax.inject.Provider;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
