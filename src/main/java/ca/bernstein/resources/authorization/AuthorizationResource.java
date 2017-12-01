@@ -19,6 +19,7 @@ import ca.bernstein.util.Validations;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.EncoderException;
 import org.apache.commons.codec.net.URLCodec;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpSession;
@@ -159,9 +160,16 @@ public class AuthorizationResource {
                 fragment.append("&id_token=").append(authCode.getIdToken());
             }
 
+            if (!StringUtils.isEmpty(oAuth2AuthorizationRequest.getState())) {
+                fragment.append("&state=").append(oAuth2AuthorizationRequest.getState());
+            }
+
             resolvedUriBuilder.fragment(fragment.toString());
         } else {
             resolvedUriBuilder.queryParam("code", authCode.getCode());
+            if (!StringUtils.isEmpty(oAuth2AuthorizationRequest.getState())) {
+                resolvedUriBuilder.queryParam("state", oAuth2AuthorizationRequest.getState());
+            }
         }
 
         URI resolvedRedirectUri = resolvedUriBuilder.build();
@@ -178,7 +186,7 @@ public class AuthorizationResource {
 
         URI requestedUri = URI.create(oAuth2AuthorizationRequest.getRedirectUri());
         URI resolvedRedirectUri = UriBuilder.fromUri(requestedUri)
-                .fragment(oAuth2TokenResponse.getAsUriFragment())
+                .fragment(oAuth2TokenResponse.getAsUrlEncodedFormParams())
                 .build();
 
         return Response.temporaryRedirect(resolvedRedirectUri).build();

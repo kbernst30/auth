@@ -79,6 +79,35 @@ public class AuthorizationResourceTest {
     }
 
     @Test
+    public void getOAuth2Authorization_oauthCodeResponseWithState_isSuccessful() {
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code");
+        authorizationRequest.getOAuth2AuthorizationRequest().setState(TestUtils.SAMPLE_STATE);
+
+        OAuth2AuthCode oAuth2AuthCode = createSampleAuthCode(false, false);
+        Mockito.when(mockAuthorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER))
+                .thenReturn(oAuth2AuthCode);
+
+        Response response = authorizationResource.getOAuth2Authorization(authorizationRequest, mockHttpSession, mockUriInfo);
+
+        Assert.assertEquals(response.getStatus(), Response.Status.TEMPORARY_REDIRECT.getStatusCode());
+
+        URI redirectUri = URI.create(TestUtils.SAMPLE_VALID_REDIRECT_URI);
+        URI responseUri = response.getLocation();
+
+        Assert.assertEquals(redirectUri.getScheme(), responseUri.getScheme());
+        Assert.assertEquals(redirectUri.getHost(), responseUri.getHost());
+        Assert.assertEquals(redirectUri.getPath(), responseUri.getPath());
+        Assert.assertNull(responseUri.getFragment());
+
+        String redirectQuery = redirectUri.getQuery();
+        String responseQuery = responseUri.getQuery();
+
+        Assert.assertTrue(responseQuery.contains(redirectQuery));
+        Assert.assertTrue(responseQuery.contains("code=" + TestUtils.SAMPLE_CODE));
+        Assert.assertTrue(responseQuery.contains("state=" + TestUtils.SAMPLE_STATE));
+    }
+
+    @Test
     public void getOAuth2Authorization_implicitAccessToken_isSuccessful() {
         AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("token");
         OAuth2TokenResponse oAuth2TokenResponse = createSampleTokenResponse(true, false, false);

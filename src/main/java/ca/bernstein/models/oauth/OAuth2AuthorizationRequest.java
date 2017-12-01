@@ -46,6 +46,13 @@ public class OAuth2AuthorizationRequest {
     @Getter @Setter private String scope;
 
     /**
+     * A value specified by the client that is used to maintain state between request and callback
+     * @see <a href="https://tools.ietf.org/html/rfc6749#section-10.12">https://tools.ietf.org/html/rfc6749#section-10.12</a>
+     */
+    @QueryParam("state")
+    @Getter @Setter private String state;
+
+    /**
      * Returns a set of appropriate response type implementation based on the response type field
      * <p>If no appropriate response types can be determined, return an empty set</p>
      * @return a set of new implementation of {@link AuthorizationResponseType}

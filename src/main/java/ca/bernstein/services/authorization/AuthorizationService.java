@@ -168,7 +168,12 @@ public class AuthorizationService {
             idToken = createIdToken(clientId, authenticatedUser, token, null, oidcAuthenticationRequest.getNonce());
         }
 
-        return createOauth2TokenResponse(token, null, idToken, resolvedScopes);
+        OAuth2TokenResponse oAuth2TokenResponse = createOauth2TokenResponse(token, null, idToken, resolvedScopes);
+        if (!StringUtils.isEmpty(oAuth2AuthorizationRequest.getState())) {
+            oAuth2TokenResponse.setState(oAuth2AuthorizationRequest.getState());
+        }
+
+        return oAuth2TokenResponse;
     }
 
     @Transactional

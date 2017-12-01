@@ -25,6 +25,9 @@ public class OAuth2TokenResponse {
     @JsonProperty("scope")
     @Getter @Setter private String scope;
 
+    @JsonProperty("state")
+    @Getter @Setter private String state;
+
     @JsonProperty("refresh_token")
     @Getter @Setter private String refreshToken;
 
@@ -32,13 +35,17 @@ public class OAuth2TokenResponse {
     @Getter @Setter private String idToken;
 
     @JsonIgnore
-    public String getAsUriFragment() {
-        StringBuilder builder = new StringBuilder().append("&token_type=").append(tokenType);
+    public String getAsUrlEncodedFormParams() {
+        StringBuilder builder = new StringBuilder().append("token_type=").append(tokenType);
 
         if (accessToken != null) {
-            builder.append("access_token=").append(accessToken)
+            builder.append("&access_token=").append(accessToken)
                     .append("&expires_in=").append(expiryTime)
                     .append("&scope=").append(scope);
+        }
+
+        if (state != null) {
+            builder.append("&state=").append(state);
         }
 
         if (refreshToken != null) {
