@@ -1,10 +1,12 @@
 package ca.bernstein.models.error;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 
@@ -26,15 +28,29 @@ public class ErrorResponse implements Serializable {
     @JsonProperty("error_description")
     @Getter @Setter private String errorDescription;
 
-    /**
-     * The state that might have been specified in the initial request
-     */
-    @Getter @Setter private String state;
-
     public ErrorResponse() {}
 
     public ErrorResponse(ErrorType.AbstractError errorType, String... arguments) {
         this.error = errorType.getError();
         this.errorDescription = String.format(errorType.getMessage(), arguments);
+    }
+
+    @JsonIgnore
+    public String getAsUrlEncodedFormParams() {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("error=");
+
+        if (!StringUtils.isEmpty(error)) {
+            builder.append(error);
+        }
+
+        builder.append("&error_description=");
+
+        if (!StringUtils.isEmpty(errorDescription)) {
+            builder.append(errorDescription);
+        }
+
+        return builder.toString();
     }
 }

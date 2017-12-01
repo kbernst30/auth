@@ -91,7 +91,7 @@ public class AuthorizationService {
 
         verifyRequestedRedirectUriIsAllowed(client.getRedirectUris(), redirectUri);
 
-        Set<String> resolvedScopes = getResolvedClientScope(client, requestedScopes);
+        Set<String> resolvedScopes = getResolvedClientScope(client, requestedScopes, redirectUri);
 
         boolean isTokenResponseRequested = authorizationRequest.isOpenIdConnectAuthRequest() && responseTypes.contains(OAuth2ResponseType.TOKEN);
         boolean isIdTokenResponseRequested = authorizationRequest.isOpenIdConnectAuthRequest() && responseTypes.contains(OidcResponseType.ID_TOKEN);
@@ -117,12 +117,12 @@ public class AuthorizationService {
                     }
 
                     if (isTokenResponseRequested) {
-                        oAuth2AuthCode.setAccessToken(createAccessToken(clientId, authenticatedUser, resolvedScopes));
+                        oAuth2AuthCode.setAccessToken(createAccessToken(clientId, authenticatedUser, resolvedScopes, redirectUri));
                     }
 
                     if (isIdTokenResponseRequested) {
                         oAuth2AuthCode.setIdToken(createIdToken(clientId, authenticatedUser, oAuth2AuthCode.getAccessToken(),
-                                oAuth2AuthCode.getCode(), oidcAuthenticationRequest.getNonce()));
+                                oAuth2AuthCode.getCode(), oidcAuthenticationRequest.getNonce(), redirectUri));
                     }
 
                     authCodeCache.set(authorizationCodeStr, oAuth2AuthCode);
@@ -160,12 +160,12 @@ public class AuthorizationService {
         String idToken = null;
 
         if (isTokenResponseRequested) {
-            resolvedScopes = getResolvedClientScope(client, requestedScopes);
-            token = createAccessToken(clientId, authenticatedUser, resolvedScopes);
+            resolvedScopes = getResolvedClientScope(client, requestedScopes, redirectUri);
+            token = createAccessToken(clientId, authenticatedUser, resolvedScopes, redirectUri);
         }
 
         if (isIdTokenResponseRequested) {
-            idToken = createIdToken(clientId, authenticatedUser, token, null, oidcAuthenticationRequest.getNonce());
+            idToken = createIdToken(clientId, authenticatedUser, token, null, oidcAuthenticationRequest.getNonce(), redirectUri);
         }
 
         OAuth2TokenResponse oAuth2TokenResponse = createOauth2TokenResponse(token, null, idToken, resolvedScopes);
@@ -348,6 +348,10 @@ public class AuthorizationService {
     }
 
     private Set<String> getResolvedClientScope(PlatformClient platformClient, Set<String> requestedScopes) {
+        return getResolvedClientScope(platformClient, requestedScopes, null);
+    }
+
+    private Set<String> getResolvedClientScope(PlatformClient platformClient, Set<String> requestedScopes, String redirectUri) {
 
         if (requestedScopes == null || requestedScopes.size() == 0) {
             return Stream.of(platformClient.getScope().split(",")).collect(Collectors.toSet());
@@ -360,7 +364,7 @@ public class AuthorizationService {
                     .collect(Collectors.toSet());
         } catch (JpaExecutionException e) {
             throw new AuthorizationException("An unexpected error occurred interfacing with JPA while processing " +
-                    "authorization.", e);
+                    "authorization.", redirectUri, e);
         }
 
         String clientId = platformClient.getClientId();
@@ -368,13 +372,13 @@ public class AuthorizationService {
         List<String> unknownScopes = Lists.newArrayList(Sets.difference(requestedScopes, allowedScopes));
         if (unknownScopes.size() > 0) {
             throw new InvalidScopeException(String.format("An unknown scope was requested by client [%s]", clientId),
-                    clientId, unknownScopes.get(0));
+                    redirectUri, clientId, unknownScopes.get(0));
         }
 
         List<String> unauthorizedScopes = Lists.newArrayList(Sets.difference(allowedScopes, requestedScopes));
         if (!allowedScopes.contains("privileged") && unauthorizedScopes.size() > 0) {
             throw new InvalidScopeException(String.format("Client [%s] requested a scope they are not authorized for",
-                    clientId), clientId, unauthorizedScopes.get(0));
+                    clientId), redirectUri, clientId, unauthorizedScopes.get(0));
         }
 
         return requestedScopes;
@@ -396,6 +400,10 @@ public class AuthorizationService {
     }
 
     private String createAccessToken(String clientId, AuthenticatedUser authenticatedUser, Set<String> scopes) {
+        return createAccessToken(clientId, authenticatedUser, scopes, null);
+    }
+
+    private String createAccessToken(String clientId, AuthenticatedUser authenticatedUser, Set<String> scopes, String redirectUri) {
         Map<String, String> tokenClaims = new HashMap<>();
         tokenClaims.put("email", authenticatedUser.getEmail());
         tokenClaims.put("account_id", String.valueOf(authenticatedUser.getUserId()));
@@ -404,23 +412,33 @@ public class AuthorizationService {
         try {
             return tokenService.createAccessToken(tokenClaims, TOKEN_EXPIRY_TIME_SECONDS);
         } catch (TokenException e) {
-            throw new AuthorizationException(String.format("Failed to create a new access token for client [%s]", clientId), e);
+            throw new AuthorizationException(String.format("Failed to create a new access token for client [%s]", clientId),
+                    redirectUri, e);
         }
     }
 
     private String createRefreshToken(String accessToken) {
+        return createRefreshToken(accessToken, null);
+    }
+
+    private String createRefreshToken(String accessToken, String redirectUri) {
         try {
             return tokenService.createRefreshToken(accessToken);
         } catch (TokenException e) {
-            throw new AuthorizationException("Failed to create a new refresh token", e);
+            throw new AuthorizationException("Failed to create a new refresh token", redirectUri, e);
         }
     }
 
     private String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String accessToken, String code, String nonce) {
+        return createIdToken(clientId, authenticatedUser, accessToken, code, nonce, null);
+    }
+
+    private String createIdToken(String clientId, AuthenticatedUser authenticatedUser, String accessToken, String code,
+                                 String nonce, String redirectUri) {
         try {
             return tokenService.createIdToken(clientId, authenticatedUser, accessToken, code, nonce, TOKEN_EXPIRY_TIME_SECONDS);
         } catch (TokenException e) {
-            throw new AuthorizationException("Failed to create a new ID token", e);
+            throw new AuthorizationException("Failed to create a new ID token", redirectUri, e);
         }
     }
 
