@@ -7,6 +7,10 @@ import javax.ws.rs.core.Response;
 
 public class OpenIdConnectException extends AbstractWebApplicationException {
 
+    public OpenIdConnectException(ErrorType.OpenIdConnect errorType) {
+        this(errorType, Response.Status.INTERNAL_SERVER_ERROR);
+    }
+
     public OpenIdConnectException(Throwable cause, String... arguments) {
         this(cause, ErrorType.OpenIdConnect.SERVER_ERROR, arguments);
     }

@@ -18,6 +18,10 @@ public class AccountDao {
         this.jpaEntityDao = jpaEntityDao;
     }
 
+    public Account getAccountById(int id) throws JpaExecutionException {
+        return jpaEntityDao.getEntityById(Account.class, id);
+    }
+
     public Account getAccountByEmail(String email) throws JpaExecutionException {
         return jpaEntityDao.doWork(session -> {
             CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();

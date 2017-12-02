@@ -22,10 +22,12 @@ public final class ErrorType {
 
     @AllArgsConstructor
     public enum OAuth2 implements AbstractError {
+        EXPIRED_ACCESS_TOKEN("invalid_token", "Access token was expired"),
         GRANT_TYPE_NOT_ALLOWED("unauthorized_client", "Client [%s] is not authorized to request authorization of type [%s]"),
         MISSING_CLIENT_ID("invalid_request", "a valid client_id must be provided"),
         MISSING_REDIRECT_URI("invalid_request", "a valid redirect_uri must be provided"),
         NON_ABSOLUTE_REDIRECT_URI("invalid_request", "redirect_uri must be absolute"),
+        INVALID_ACCESS_TOKEN("invalid_token", "Access token was missing or otherwise malformed"),
         INVALID_AUTHORIZATION_CODE("invalid_request", "Code [%s] is invalid for client_id [%s]"),
         INVALID_CLIENT("invalid_client", "the client credentials supplied are not valid"),
         INVALID_GRANT("invalid_grant", "The requested grant_type is not supported"),
@@ -51,7 +53,8 @@ public final class ErrorType {
         INVALID_REQUEST_OBJECT("invalid_request_object", "The request object for OpenID connect was missing or otherwise malformed"),
         LOGIN_REQUIRED("login_required", "Login is required to access this resource."),
         MISSING_REQUIRED_PARAMETER("invalid_request_object", "Parameter [%s] is required for OpenID Connect authentication requests"),
-        SERVER_ERROR("server_error", "An unknown error occurred");
+        SERVER_ERROR("server_error", "An unknown error occurred"),
+        UNKNOWN_USER_INFO("invalid_request", "UserInfo requested for an unknown user");
 
         @Getter private final String error;
         @Getter private final String message;

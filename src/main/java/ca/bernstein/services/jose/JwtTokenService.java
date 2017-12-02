@@ -4,6 +4,7 @@ import ca.bernstein.exceptions.authorization.SigningKeyException;
 import ca.bernstein.exceptions.authorization.TokenException;
 import ca.bernstein.factories.jose.JwsAlgorithmFactory;
 import ca.bernstein.models.authentication.AuthenticatedUser;
+import ca.bernstein.util.AuthenticationUtils;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.JWTVerifier;
@@ -80,7 +81,7 @@ public class JwtTokenService implements TokenService {
         Date now = new Date();
 
         jwtCreator.withIssuer("http://localhost:8080/"); // TODO get actual issuer - config or detect?
-        jwtCreator.withSubject(getSubjectIdentifierForUser(authenticatedUser));
+        jwtCreator.withSubject(AuthenticationUtils.getSubjectIdentifierForUser(authenticatedUser));
         jwtCreator.withAudience(clientId);
         jwtCreator.withExpiresAt(new DateTime(now).plusSeconds(expiryTimeSeconds).toDate());
         jwtCreator.withIssuedAt(now);
@@ -136,19 +137,6 @@ public class JwtTokenService implements TokenService {
     public String getTokenClaim(String token, String claim) {
         DecodedJWT decodedAccessToken = JWT.decode(token);
         return decodedAccessToken.getClaim(claim).asString();
-    }
-
-    private String getSubjectIdentifierForUser(AuthenticatedUser authenticatedUser) throws TokenException {
-        MessageDigest sha256;
-        try {
-            sha256 = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new TokenException("Unable to generate subject identifier for user", e);
-        }
-
-        String salt = authenticatedUser.getEmail() + ":" + authenticatedUser.getUserId(); // TODO more secure/random salt
-        byte[] hash = sha256.digest(salt.getBytes());
-        return UUID.nameUUIDFromBytes(hash).toString();
     }
 
     private String getHashFromSourceForIdToken(String source, Algorithm algorithm) {

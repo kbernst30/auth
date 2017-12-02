@@ -14,6 +14,8 @@ import ca.bernstein.persistence.*;
 import ca.bernstein.persistence.hibernate.HibernateDao;
 import ca.bernstein.persistence.hibernate.HibernateSessionProvider;
 import ca.bernstein.services.authentication.AuthenticationService;
+import ca.bernstein.services.authentication.DefaultUserInfoService;
+import ca.bernstein.services.authentication.UserInfoService;
 import ca.bernstein.services.authorization.AuthorizationService;
 import ca.bernstein.services.jose.JwtTokenService;
 import ca.bernstein.services.jose.KeyManager;
@@ -77,6 +79,7 @@ public class App extends ResourceConfig {
                 bind(JwtTokenService.class).to(TokenService.class).in(Singleton.class);
                 bind(KeyManagerImpl.class).to(KeyManager.class).in(Singleton.class);
                 bind(AuthorizationService.class).to(AuthorizationService.class).in(Singleton.class);
+                bind(DefaultUserInfoService.class).to(UserInfoService.class).in(Singleton.class);
 
                 // Sessions
                 bindFactory(AuthenticatedUserFactory.class).to(AuthenticatedUser.class);

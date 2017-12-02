@@ -1,9 +1,13 @@
 package ca.bernstein.util;
 
+import ca.bernstein.exceptions.authorization.TokenException;
 import ca.bernstein.models.authentication.AuthenticatedUser;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.servlet.http.HttpSession;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
 
 public class AuthenticationUtils {
 
@@ -20,6 +24,20 @@ public class AuthenticationUtils {
         }
 
         return null;
+    }
+
+    public static String getSubjectIdentifierForUser(AuthenticatedUser authenticatedUser) {
+        MessageDigest sha256;
+        try {
+            sha256 = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            // Hardcoding the algorithm should mean we never get here
+            throw new RuntimeException("Unable to generate subject identifier for user", e);
+        }
+
+        String salt = authenticatedUser.getEmail() + ":" + authenticatedUser.getUserId(); // TODO more secure/random salt
+        byte[] hash = sha256.digest(salt.getBytes());
+        return UUID.nameUUIDFromBytes(hash).toString();
     }
 
     public static boolean checkPassword(String password, String hash) {

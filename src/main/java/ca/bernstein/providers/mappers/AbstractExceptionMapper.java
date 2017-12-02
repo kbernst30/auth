@@ -29,12 +29,6 @@ public abstract class AbstractExceptionMapper<T extends AbstractWebApplicationEx
 
     @Override
     public Response toResponse(T e) {
-        if (e.getResponse().getStatus() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
-            log.error(e.getMessage());
-        } else {
-            log.warn(e.getMessage());
-        }
-
         if (StringUtils.isEmpty(e.getRedirectUri()) || authorizationRequestProvider.get() == null) {
             return Response.fromResponse(e.getResponse())
                     .entity(e.getError())
