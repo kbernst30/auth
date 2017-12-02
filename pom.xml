@@ -3,8 +3,11 @@
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>my-app</artifactId>
+    <modules>
+        <module>auth-core</module>
+    </modules>
     <groupId>com.test.app</groupId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <name>my-app</name>
     <url>http://maven.apache.org</url>
@@ -15,7 +18,7 @@
         <jackson.version>2.9.2</jackson.version>
         <hibernate.version>5.2.12.Final</hibernate.version>
         <logback.version>1.2.3</logback.version>
-        <main.class>ca.bernstein.Main</main.class>
+        <main.class>io.keystash.Main</main.class>
     </properties>
 
     <dependencies>
