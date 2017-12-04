@@ -1,6 +1,6 @@
 package io.keystash.services.jose;
 
-import io.keystash.models.jose.SigningKey;
+import io.keystash.common.models.jose.SigningKey;
 
 import java.util.Set;
 

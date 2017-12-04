@@ -1,10 +1,10 @@
 package io.keystash.services.jose;
 
-import io.keystash.exceptions.jpa.JpaExecutionException;
+import io.keystash.common.exceptions.jpa.JpaExecutionException;
 import io.keystash.factories.jose.KeyProviderFactory;
-import io.keystash.models.jose.HmacKey;
-import io.keystash.models.jose.RsaKey;
-import io.keystash.models.jose.SigningKey;
+import io.keystash.common.models.jose.HmacKey;
+import io.keystash.common.models.jose.RsaKey;
+import io.keystash.common.models.jose.SigningKey;
 import io.keystash.persistence.AppKeyDao;
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,6 +1,6 @@
 package io.keystash.factories.hk2;
 
-import io.keystash.configuration.Configuration;
+import io.keystash.common.configuration.Configuration;
 import org.cfg4j.provider.ConfigurationProvider;
 import org.glassfish.hk2.api.Factory;
 

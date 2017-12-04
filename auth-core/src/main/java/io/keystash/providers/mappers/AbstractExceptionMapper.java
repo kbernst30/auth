@@ -1,10 +1,10 @@
 package io.keystash.providers.mappers;
 
 import io.keystash.exceptions.AbstractWebApplicationException;
-import io.keystash.models.common.AuthorizationRequest;
-import io.keystash.models.error.ErrorResponse;
-import io.keystash.models.oauth.OAuth2AuthorizationRequest;
-import io.keystash.models.oauth.OAuth2ResponseType;
+import io.keystash.common.models.common.AuthorizationRequest;
+import io.keystash.common.models.error.ErrorResponse;
+import io.keystash.common.models.oauth.OAuth2AuthorizationRequest;
+import io.keystash.common.models.oauth.OAuth2ResponseType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 

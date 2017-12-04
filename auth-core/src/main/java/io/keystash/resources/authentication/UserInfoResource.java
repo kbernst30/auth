@@ -1,8 +1,8 @@
 package io.keystash.resources.authentication;
 
 import io.keystash.exceptions.OAuth2Exception;
-import io.keystash.models.authentication.oidc.UserInfo;
-import io.keystash.models.error.ErrorType;
+import io.keystash.common.models.authentication.oidc.UserInfo;
+import io.keystash.common.models.error.ErrorType;
 import io.keystash.services.authentication.UserInfoService;
 import io.keystash.services.jose.TokenService;
 import lombok.extern.slf4j.Slf4j;

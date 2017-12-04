@@ -1,6 +1,7 @@
 package io.keystash;
 
-import io.keystash.configuration.JpaConfiguration;
+import io.keystash.common.configuration.JpaConfiguration;
+import io.keystash.common.persistence.JpaEntityDao;
 import io.keystash.factories.hk2.AuthenticatedUserFactory;
 import io.keystash.factories.hk2.ConfigurationProviderFactory;
 import io.keystash.factories.hk2.HttpSessionFactory;
@@ -8,11 +9,11 @@ import io.keystash.factories.hk2.JpaConfigurationFactory;
 import io.keystash.factories.jose.JwsAlgorithmFactory;
 import io.keystash.factories.jose.KeyProviderFactory;
 import io.keystash.filters.AuthenticationFilter;
-import io.keystash.models.authentication.AuthenticatedUser;
-import io.keystash.models.jpa.AllowedScope;
+import io.keystash.common.models.authentication.AuthenticatedUser;
+import io.keystash.common.models.jpa.AllowedScope;
 import io.keystash.persistence.*;
-import io.keystash.persistence.hibernate.HibernateDao;
-import io.keystash.persistence.hibernate.HibernateSessionProvider;
+import io.keystash.common.persistence.hibernate.HibernateDao;
+import io.keystash.common.persistence.hibernate.HibernateSessionProvider;
 import io.keystash.services.authentication.AuthenticationService;
 import io.keystash.services.authentication.DefaultUserInfoService;
 import io.keystash.services.authentication.UserInfoService;

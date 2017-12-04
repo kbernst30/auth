@@ -1,9 +1,9 @@
 package io.keystash.services.jose;
 
-import io.keystash.exceptions.authorization.SigningKeyException;
+import io.keystash.common.exceptions.SigningKeyException;
 import io.keystash.exceptions.authorization.TokenException;
 import io.keystash.factories.jose.JwsAlgorithmFactory;
-import io.keystash.models.authentication.AuthenticatedUser;
+import io.keystash.common.models.authentication.AuthenticatedUser;
 import io.keystash.util.AuthenticationUtils;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;

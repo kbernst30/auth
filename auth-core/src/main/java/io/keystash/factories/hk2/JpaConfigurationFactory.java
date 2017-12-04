@@ -1,6 +1,6 @@
 package io.keystash.factories.hk2;
 
-import io.keystash.configuration.JpaConfiguration;
+import io.keystash.common.configuration.JpaConfiguration;
 import org.cfg4j.provider.ConfigurationProvider;
 
 import javax.inject.Inject;

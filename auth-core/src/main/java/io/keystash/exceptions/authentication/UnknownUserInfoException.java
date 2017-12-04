@@ -1,7 +1,7 @@
 package io.keystash.exceptions.authentication;
 
 import io.keystash.exceptions.OpenIdConnectException;
-import io.keystash.models.error.ErrorType;
+import io.keystash.common.models.error.ErrorType;
 
 import javax.ws.rs.core.Response;
 

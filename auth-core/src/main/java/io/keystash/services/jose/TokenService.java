@@ -1,7 +1,7 @@
 package io.keystash.services.jose;
 
 import io.keystash.exceptions.authorization.TokenException;
-import io.keystash.models.authentication.AuthenticatedUser;
+import io.keystash.common.models.authentication.AuthenticatedUser;
 
 import java.util.Map;
 

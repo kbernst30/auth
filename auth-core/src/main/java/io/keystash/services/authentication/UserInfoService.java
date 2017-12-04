@@ -1,6 +1,6 @@
 package io.keystash.services.authentication;
 
-import io.keystash.models.authentication.oidc.UserInfo;
+import io.keystash.common.models.authentication.oidc.UserInfo;
 
 /**
  * Service to provide UserInfo as specified by OpenId Connect Core

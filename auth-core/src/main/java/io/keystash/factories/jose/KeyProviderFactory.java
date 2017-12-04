@@ -1,14 +1,14 @@
 package io.keystash.factories.jose;
 
-import io.keystash.exceptions.authorization.SigningKeyException;
-import io.keystash.models.jose.JwsAlgorithmType;
-import io.keystash.models.jose.KeyConfigName;
-import io.keystash.models.jpa.AppKey;
-import io.keystash.models.jpa.AppKeyConfig;
+import io.keystash.common.exceptions.SigningKeyException;
+import io.keystash.common.models.jose.JwsAlgorithmType;
+import io.keystash.common.models.jose.KeyConfigName;
+import io.keystash.common.models.jpa.AppKey;
+import io.keystash.common.models.jpa.AppKeyConfig;
 import io.keystash.services.jose.HmacSecretKeyProvider;
 import io.keystash.services.jose.KeyProvider;
 import io.keystash.services.jose.RsaKeyProvider;
-import io.keystash.util.KeyUtils;
+import io.keystash.common.util.KeyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 

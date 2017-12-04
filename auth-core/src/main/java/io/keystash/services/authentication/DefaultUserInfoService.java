@@ -2,11 +2,11 @@ package io.keystash.services.authentication;
 
 import io.keystash.exceptions.OpenIdConnectException;
 import io.keystash.exceptions.authentication.UnknownUserInfoException;
-import io.keystash.exceptions.jpa.JpaExecutionException;
-import io.keystash.models.authentication.AuthenticatedUser;
-import io.keystash.models.authentication.oidc.UserInfo;
-import io.keystash.models.error.ErrorType;
-import io.keystash.models.jpa.Account;
+import io.keystash.common.exceptions.jpa.JpaExecutionException;
+import io.keystash.common.models.authentication.AuthenticatedUser;
+import io.keystash.common.models.authentication.oidc.UserInfo;
+import io.keystash.common.models.error.ErrorType;
+import io.keystash.common.models.jpa.Account;
 import io.keystash.persistence.AccountDao;
 import io.keystash.util.AuthenticationUtils;
 import lombok.extern.slf4j.Slf4j;

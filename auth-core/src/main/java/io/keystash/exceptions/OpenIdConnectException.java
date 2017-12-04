@@ -1,7 +1,7 @@
 package io.keystash.exceptions;
 
-import io.keystash.models.error.ErrorResponse;
-import io.keystash.models.error.ErrorType;
+import io.keystash.common.models.error.ErrorResponse;
+import io.keystash.common.models.error.ErrorType;
 
 import javax.ws.rs.core.Response;
 

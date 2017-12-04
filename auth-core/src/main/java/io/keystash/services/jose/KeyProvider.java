@@ -1,6 +1,6 @@
 package io.keystash.services.jose;
 
-import io.keystash.models.jose.JwsAlgorithmType;
+import io.keystash.common.models.jose.JwsAlgorithmType;
 
 /**
  * Provider for appropriate key to be used for signing tokens

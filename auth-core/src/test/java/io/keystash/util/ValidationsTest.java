@@ -2,9 +2,9 @@ package io.keystash.util;
 
 import io.keystash.exceptions.OAuth2Exception;
 import io.keystash.exceptions.OpenIdConnectException;
-import io.keystash.models.authentication.oidc.OidcAuthenticationRequest;
-import io.keystash.models.common.AuthorizationRequest;
-import io.keystash.models.oauth.OAuth2AuthorizationRequest;
+import io.keystash.common.models.authentication.oidc.OidcAuthenticationRequest;
+import io.keystash.common.models.common.AuthorizationRequest;
+import io.keystash.common.models.oauth.OAuth2AuthorizationRequest;
 import org.junit.Before;
 import org.junit.Test;
 

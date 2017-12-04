@@ -1,6 +1,6 @@
 package io.keystash.services.jose;
 
-import io.keystash.models.jose.JwsAlgorithmType;
+import io.keystash.common.models.jose.JwsAlgorithmType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

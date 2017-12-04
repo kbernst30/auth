@@ -1,6 +1,6 @@
 package io.keystash.util;
 
-import io.keystash.models.authentication.AuthenticatedUser;
+import io.keystash.common.models.authentication.AuthenticatedUser;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.servlet.http.HttpSession;
@@ -10,7 +10,6 @@ import java.util.UUID;
 
 public class AuthenticationUtils {
 
-    public static final String OPEN_ID_SCOPE = "openid";
     public static final String AUTHENTICATED_USER = "AUTHENTICATED_USER";
 
     public static boolean isValidSession(HttpSession session) {

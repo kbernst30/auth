@@ -1,17 +1,18 @@
 package io.keystash.services.authorization;
 
+import io.keystash.common.models.authentication.oidc.OidcScope;
 import io.keystash.exceptions.authentication.AuthenticationException;
-import io.keystash.exceptions.jpa.JpaExecutionException;
-import io.keystash.models.authentication.AuthenticatedUser;
-import io.keystash.models.authentication.oidc.OidcAuthenticationRequest;
-import io.keystash.models.authentication.oidc.OidcResponseType;
-import io.keystash.models.common.AuthorizationRequest;
-import io.keystash.models.common.AuthorizationResponseType;
-import io.keystash.models.jpa.AllowedScope;
-import io.keystash.models.jpa.PlatformClient;
-import io.keystash.models.common.BasicAuthorizationDetails;
-import io.keystash.models.jpa.RedirectUri;
-import io.keystash.models.oauth.*;
+import io.keystash.common.exceptions.jpa.JpaExecutionException;
+import io.keystash.common.models.authentication.AuthenticatedUser;
+import io.keystash.common.models.authentication.oidc.OidcAuthenticationRequest;
+import io.keystash.common.models.authentication.oidc.OidcResponseType;
+import io.keystash.common.models.common.AuthorizationRequest;
+import io.keystash.common.models.common.AuthorizationResponseType;
+import io.keystash.common.models.jpa.AllowedScope;
+import io.keystash.common.models.jpa.PlatformClient;
+import io.keystash.common.models.common.BasicAuthorizationDetails;
+import io.keystash.common.models.jpa.RedirectUri;
+import io.keystash.common.models.oauth.*;
 import io.keystash.persistence.PlatformClientDao;
 import io.keystash.persistence.ScopeDao;
 import io.keystash.services.authentication.AuthenticationService;
@@ -205,7 +206,7 @@ public class AuthorizationService {
         String token = createAccessToken(client.getClientId(), oAuth2AuthCode.getAuthenticatedUser(), oAuth2AuthCode.getResolvedScopes());
         String idToken = null;
 
-        if (resolvedScopes.contains(AuthenticationUtils.OPEN_ID_SCOPE)) {
+        if (resolvedScopes.contains(OidcScope.OPEN_ID_SCOPE.getValue())) {
             if (oAuth2AuthCode.getAccessToken() != null) {
                 token = oAuth2AuthCode.getAccessToken();
             }

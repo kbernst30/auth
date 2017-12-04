@@ -1,7 +1,7 @@
 package io.keystash.exceptions.authorization;
 
 import io.keystash.exceptions.OAuth2Exception;
-import io.keystash.models.error.ErrorType;
+import io.keystash.common.models.error.ErrorType;
 
 import javax.ws.rs.core.Response;
 

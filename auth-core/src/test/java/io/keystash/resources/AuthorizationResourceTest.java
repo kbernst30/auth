@@ -1,16 +1,16 @@
 package io.keystash.resources;
 
-import io.keystash.models.authentication.AuthenticatedUser;
-import io.keystash.models.common.AuthorizationRequest;
-import io.keystash.models.common.BasicAuthorizationDetails;
-import io.keystash.models.oauth.OAuth2GrantType;
+import io.keystash.common.models.authentication.AuthenticatedUser;
+import io.keystash.common.models.common.AuthorizationRequest;
+import io.keystash.common.models.common.BasicAuthorizationDetails;
+import io.keystash.common.models.oauth.OAuth2GrantType;
 import io.keystash.resources.authorization.AuthorizationResource;
 import io.keystash.services.authorization.AuthorizationService;
 import io.keystash.util.AuthenticationUtils;
 import io.keystash.util.TestUtils;
-import io.keystash.models.oauth.OAuth2AuthCode;
-import io.keystash.models.oauth.OAuth2TokenRequest;
-import io.keystash.models.oauth.OAuth2TokenResponse;
+import io.keystash.common.models.oauth.OAuth2AuthCode;
+import io.keystash.common.models.oauth.OAuth2TokenRequest;
+import io.keystash.common.models.oauth.OAuth2TokenResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;

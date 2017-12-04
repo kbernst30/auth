@@ -1,7 +1,8 @@
 package io.keystash.persistence;
 
-import io.keystash.exceptions.jpa.JpaExecutionException;
-import io.keystash.models.jpa.PlatformClient;
+import io.keystash.common.exceptions.jpa.JpaExecutionException;
+import io.keystash.common.models.jpa.PlatformClient;
+import io.keystash.common.persistence.JpaEntityDao;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;

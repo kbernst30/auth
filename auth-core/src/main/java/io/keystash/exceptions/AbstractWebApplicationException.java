@@ -1,6 +1,6 @@
 package io.keystash.exceptions;
 
-import io.keystash.models.error.ErrorResponse;
+import io.keystash.common.models.error.ErrorResponse;
 import lombok.Getter;
 import lombok.Setter;
 

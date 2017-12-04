@@ -1,6 +1,6 @@
 package io.keystash.factories.hk2;
 
-import io.keystash.models.authentication.AuthenticatedUser;
+import io.keystash.common.models.authentication.AuthenticatedUser;
 import io.keystash.util.AuthenticationUtils;
 import org.glassfish.hk2.api.Factory;
 

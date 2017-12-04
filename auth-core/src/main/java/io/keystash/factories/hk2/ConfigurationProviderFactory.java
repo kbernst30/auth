@@ -1,6 +1,6 @@
 package io.keystash.factories.hk2;
 
-import io.keystash.annotation.ConfigFile;
+import io.keystash.common.annotation.ConfigFile;
 import org.cfg4j.provider.ConfigurationProvider;
 import org.cfg4j.provider.ConfigurationProviderBuilder;
 import org.cfg4j.source.classpath.ClasspathConfigurationSource;
@@ -24,7 +24,7 @@ public class ConfigurationProviderFactory implements Factory<ConfigurationProvid
         Set<Path> classpathFiles = new HashSet<>();
         Set<Path> serverFiles = new HashSet<>();
 
-        Reflections reflections = new Reflections("io.keystash.configuration");
+        Reflections reflections = new Reflections("io.keystash.common.configuration");
         Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(ConfigFile.class);
         annotatedClasses.forEach(clazz -> {
             ConfigFile configFile = clazz.getAnnotation(ConfigFile.class);

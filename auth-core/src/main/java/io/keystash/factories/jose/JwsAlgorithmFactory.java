@@ -1,9 +1,9 @@
 package io.keystash.factories.jose;
 
-import io.keystash.exceptions.authorization.SigningKeyException;
-import io.keystash.models.jose.HmacKey;
-import io.keystash.models.jose.RsaKey;
-import io.keystash.models.jose.SigningKey;
+import io.keystash.common.exceptions.SigningKeyException;
+import io.keystash.common.models.jose.HmacKey;
+import io.keystash.common.models.jose.RsaKey;
+import io.keystash.common.models.jose.SigningKey;
 import io.keystash.services.jose.KeyManager;
 import com.auth0.jwt.algorithms.Algorithm;
 

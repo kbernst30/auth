@@ -1,7 +1,7 @@
 package io.keystash.providers.mappers;
 
-import io.keystash.models.error.ErrorResponse;
-import io.keystash.models.error.ErrorType;
+import io.keystash.common.models.error.ErrorResponse;
+import io.keystash.common.models.error.ErrorType;
 import org.glassfish.jersey.server.ParamException;
 
 import javax.ws.rs.core.MediaType;

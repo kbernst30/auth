@@ -6,7 +6,7 @@ import io.keystash.exceptions.authentication.UnknownAccountException;
 import io.keystash.exceptions.LoginException;
 import io.keystash.models.authentication.LoginPageConfig;
 import io.keystash.models.authentication.LoginRequest;
-import io.keystash.models.error.ErrorType;
+import io.keystash.common.models.error.ErrorType;
 import io.keystash.services.authentication.AuthenticationService;
 import io.keystash.util.Validations;
 import lombok.extern.slf4j.Slf4j;

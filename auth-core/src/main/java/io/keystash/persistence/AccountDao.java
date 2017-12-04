@@ -1,7 +1,8 @@
 package io.keystash.persistence;
 
-import io.keystash.exceptions.jpa.JpaExecutionException;
-import io.keystash.models.jpa.Account;
+import io.keystash.common.exceptions.jpa.JpaExecutionException;
+import io.keystash.common.models.jpa.Account;
+import io.keystash.common.persistence.JpaEntityDao;
 
 import javax.inject.Inject;
 import javax.persistence.criteria.CriteriaBuilder;
