@@ -10,7 +10,6 @@ import io.keystash.factories.jose.KeyProviderFactory;
 import io.keystash.filters.AuthenticationFilter;
 import io.keystash.models.authentication.AuthenticatedUser;
 import io.keystash.models.jpa.AllowedScope;
-import ca.bernstein.persistence.*;
 import io.keystash.persistence.*;
 import io.keystash.persistence.hibernate.HibernateDao;
 import io.keystash.persistence.hibernate.HibernateSessionProvider;
@@ -32,13 +31,16 @@ import org.glassfish.jersey.servlet.ServletProperties;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.ApplicationPath;
 
+
+@ApplicationPath("auth")
 public class App extends ResourceConfig {
 
     public App() {
 
         // Scan packages to add to Jersey
-        packages("ca.bernstein.providers", "ca.bernstein.resources");
+        packages("io.keystash.providers", "io.keystash.resources");
 
         // Register necessary dependencies
         register(JacksonFeature.class);

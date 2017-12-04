@@ -1,7 +1,6 @@
 package io.keystash.services.authorization;
 
 import io.keystash.exceptions.authentication.AuthenticationException;
-import ca.bernstein.exceptions.authorization.*;
 import io.keystash.exceptions.jpa.JpaExecutionException;
 import io.keystash.models.authentication.AuthenticatedUser;
 import io.keystash.models.authentication.oidc.OidcAuthenticationRequest;
@@ -12,7 +11,6 @@ import io.keystash.models.jpa.AllowedScope;
 import io.keystash.models.jpa.PlatformClient;
 import io.keystash.models.common.BasicAuthorizationDetails;
 import io.keystash.models.jpa.RedirectUri;
-import ca.bernstein.models.oauth.*;
 import io.keystash.models.oauth.*;
 import io.keystash.persistence.PlatformClientDao;
 import io.keystash.persistence.ScopeDao;

@@ -3,7 +3,6 @@ package io.keystash.resources;
 import io.keystash.models.authentication.AuthenticatedUser;
 import io.keystash.models.common.AuthorizationRequest;
 import io.keystash.models.common.BasicAuthorizationDetails;
-import ca.bernstein.models.oauth.*;
 import io.keystash.models.oauth.OAuth2GrantType;
 import io.keystash.resources.authorization.AuthorizationResource;
 import io.keystash.services.authorization.AuthorizationService;

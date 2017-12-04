@@ -1,7 +1,6 @@
 package io.keystash.persistence.hibernate;
 
 import io.keystash.configuration.JpaConfiguration;
-import ca.bernstein.models.jpa.*;
 import io.keystash.models.jpa.*;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.SessionFactory;

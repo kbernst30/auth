@@ -24,7 +24,7 @@ public class ConfigurationProviderFactory implements Factory<ConfigurationProvid
         Set<Path> classpathFiles = new HashSet<>();
         Set<Path> serverFiles = new HashSet<>();
 
-        Reflections reflections = new Reflections("ca.bernstein.configuration");
+        Reflections reflections = new Reflections("io.keystash.configuration");
         Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(ConfigFile.class);
         annotatedClasses.forEach(clazz -> {
             ConfigFile configFile = clazz.getAnnotation(ConfigFile.class);

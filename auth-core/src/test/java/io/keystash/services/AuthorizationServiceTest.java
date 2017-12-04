@@ -8,7 +8,6 @@ import io.keystash.models.jpa.Account;
 import io.keystash.models.jpa.AllowedScope;
 import io.keystash.models.jpa.PlatformClient;
 import io.keystash.models.jpa.RedirectUri;
-import ca.bernstein.models.oauth.*;
 import io.keystash.models.oauth.OAuth2GrantType;
 import io.keystash.persistence.PlatformClientDao;
 import io.keystash.persistence.ScopeDao;
