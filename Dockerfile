@@ -1,3 +1,3 @@
-FROM maven:alpine
+FROM maven:latest
 
-CMD sh
+CMD bash

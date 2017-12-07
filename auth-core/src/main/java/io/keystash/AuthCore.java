@@ -36,9 +36,9 @@ import javax.ws.rs.ApplicationPath;
 
 
 @ApplicationPath("auth")
-public class App extends ResourceConfig {
+public class AuthCore extends ResourceConfig {
 
-    public App() {
+    public AuthCore() {
 
         // Scan packages to add to Jersey
         packages("io.keystash.providers", "io.keystash.resources");

@@ -24,7 +24,7 @@
         <resources>
             <resource>
                 <directory>src/main/webapp</directory>
-                <targetPath>webapp</targetPath>
+                <targetPath>auth-core-web</targetPath>
             </resource>
         </resources>
     </build>

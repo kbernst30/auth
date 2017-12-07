@@ -1,10 +1,14 @@
 package io.keystash.dist;
 
-import io.keystash.App;
+import io.keystash.AuthCore;
+import io.keystash.dist.debug.AdminConsoleDebugServlet;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.eclipse.jetty.apache.jsp.JettyJasperInitializer;
 import org.eclipse.jetty.jsp.JettyJspServlet;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -16,25 +20,51 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+@Slf4j
 public class Main {
 
     public static void main(String[] args) {
 
-        // Initialize Main Jersey App
-        App app = new App();
+        Set<String> argsSet = Stream.of(args).collect(Collectors.toSet());
+
+        Server server = new Server(8080);
+
+        ServletContextHandler authCoreContext = getAuthCoreContext(server);
+        ServletContextHandler adminConsoleContext = getAdminConsoleContext(argsSet.contains("debug")); // todo more robust
+
+        ContextHandlerCollection contexts = new ContextHandlerCollection();
+        contexts.setHandlers(new Handler[] { authCoreContext, adminConsoleContext });
+
+        // Set Servlet context to server
+        server.setHandler(contexts);
+
+        try {
+            server.start();
+            server.join();
+        } catch (Exception e) {
+            log.error("Server failed", e);
+            server.destroy();
+        }
+    }
+
+    private static ServletContextHandler getAuthCoreContext(Server server) {
+        // Initialize Main Jersey AuthCore
+        AuthCore authCore = new AuthCore();
 
         // Initialize Jetty Server and map Jersey application to /auth/
         // TODO Add back in the Authentication Filter
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        Server server = new Server(8080);
 
-        ServletHolder servlet = new ServletHolder(new ServletContainer(app));
+        ServletHolder servlet = new ServletHolder(new ServletContainer(authCore));
         context.addServlet(servlet, "/auth/*");
 
         // Set Resources directory for JSPs and webapps
         context.setContextPath("/");
-        context.setBaseResource(Resource.newResource(Main.class.getClassLoader().getResource("webapp")));
+        context.setBaseResource(Resource.newResource(Main.class.getClassLoader().getResource("auth-core-web")));
 
         ServletHolder defaultServlet = new ServletHolder("default", DefaultServlet.class);
         defaultServlet.setInitParameter("dirAllowed", "true");
@@ -50,15 +80,27 @@ public class Main {
 
         context.setAttribute("org.eclipse.jetty.server.webapp.ContainerIncludeJarPattern", ".*/[^/]*servlet-api-[^/]*\\.jar$|.*/javax.servlet.jsp.jstl-.*\\.jar$|.*/[^/]*taglibs.*\\.jar$");
 
-        // Set Servlet context to server
-        server.setHandler(context);
+        return context;
+    }
 
-        try {
-            server.start();
-            server.join();
-        } catch (Exception e) {
-            server.destroy();
+    private static ServletContextHandler getAdminConsoleContext(boolean isDebug) {
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+
+        context.setContextPath("/admin");
+
+        if (!isDebug) {
+            context.setBaseResource(Resource.newResource(Main.class.getClassLoader().getResource("admin-web")));
+
+            ServletHolder defaultServlet = new ServletHolder("default", DefaultServlet.class);
+            defaultServlet.setInitParameter("dirAllowed", "true");
+            context.addServlet(defaultServlet, "/");
+
+        } else {
+            ServletHolder servlet = new ServletHolder(new AdminConsoleDebugServlet());
+            context.addServlet(servlet, "/*");
         }
+
+        return context;
     }
 
     // See https://github.com/jetty-project/embedded-jetty-jsp/blob/master/src/main/java/org/eclipse/jetty/demo/Main.java
