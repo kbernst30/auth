@@ -119,6 +119,7 @@ public class AuthorizationService {
 
                     if (isTokenResponseRequested) {
                         oAuth2AuthCode.setAccessToken(createAccessToken(clientId, authenticatedUser, resolvedScopes, redirectUri));
+                        oAuth2AuthCode.setRefreshToken(createRefreshToken(oAuth2AuthCode.getAccessToken()));
                     }
 
                     if (isIdTokenResponseRequested) {
@@ -204,11 +205,18 @@ public class AuthorizationService {
 
         Set<String> resolvedScopes = oAuth2AuthCode.getResolvedScopes();
         String token = createAccessToken(client.getClientId(), oAuth2AuthCode.getAuthenticatedUser(), oAuth2AuthCode.getResolvedScopes());
+        String refreshToken = createRefreshToken(token);
         String idToken = null;
 
         if (resolvedScopes.contains(OidcScope.OPEN_ID_SCOPE.getValue())) {
             if (oAuth2AuthCode.getAccessToken() != null) {
                 token = oAuth2AuthCode.getAccessToken();
+            }
+
+            if (oAuth2AuthCode.getRefreshToken() != null) {
+                refreshToken = oAuth2AuthCode.getRefreshToken();
+            } else {
+                refreshToken = createRefreshToken(token);
             }
 
             if (oAuth2AuthCode.getIdToken() != null) {
@@ -218,7 +226,7 @@ public class AuthorizationService {
             }
         }
 
-        return createOauth2TokenResponse(token, null, idToken, resolvedScopes);
+        return createOauth2TokenResponse(token, refreshToken, idToken, resolvedScopes);
     }
 
     @Transactional

@@ -1,4 +1,4 @@
-const KEYSTASH_HELPERS = {
+const HELPERS = {
 
     registerClickOutsideEvent: (component, handler) => {
         const handleClickOutside = e => {
@@ -15,4 +15,4 @@ const KEYSTASH_HELPERS = {
 
 };
 
-export default KEYSTASH_HELPERS;
+export default HELPERS;

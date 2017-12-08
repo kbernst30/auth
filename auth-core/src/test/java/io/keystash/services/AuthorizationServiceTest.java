@@ -298,7 +298,8 @@ public class AuthorizationServiceTest {
 
         Assert.assertNotNull(oAuth2TokenResponse.getAccessToken());
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getAccessToken()));
-        Assert.assertNull(oAuth2TokenResponse.getRefreshToken());
+        Assert.assertNotNull(oAuth2TokenResponse.getRefreshToken());
+        Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getRefreshToken()));
         Assert.assertNull(oAuth2TokenResponse.getIdToken());
         Assert.assertNotNull(oAuth2TokenResponse.getScope());
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getScope()));
@@ -318,7 +319,8 @@ public class AuthorizationServiceTest {
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getAccessToken()));
         Assert.assertNotNull(oAuth2TokenResponse.getIdToken());
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getIdToken()));
-        Assert.assertNull(oAuth2TokenResponse.getRefreshToken());
+        Assert.assertNotNull(oAuth2TokenResponse.getRefreshToken());
+        Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getRefreshToken()));
         Assert.assertNotNull(oAuth2TokenResponse.getScope());
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getScope()));
         Assert.assertNotNull(oAuth2TokenResponse.getExpiryTime());

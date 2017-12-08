@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types'
 
-import KEYSTASH_HELPERS from '../utilities/keystash_helpers';
+import HELPERS from '../utilities/helpers';
 
 const DropdownMenuItem = ({ action, text }) => <li onClick={action}>{text}</li>;
 
@@ -18,7 +18,7 @@ class DropdownMenu extends React.Component {
     }
 
     componentDidMount() {
-        this.clickOutsideHandler = KEYSTASH_HELPERS.registerClickOutsideEvent(this._ref, () => {
+        this.clickOutsideHandler = HELPERS.registerClickOutsideEvent(this._ref, () => {
             if (!this.state.collapsed) {
                 this.toggleMenu();
             }
@@ -26,7 +26,7 @@ class DropdownMenu extends React.Component {
     }
 
     componentWillUnmount() {
-        KEYSTASH_HELPERS.unregisterClickOutsideEvent(this.clickOutsideHandler);
+        HELPERS.unregisterClickOutsideEvent(this.clickOutsideHandler);
     }
 
     setRef(ref) {

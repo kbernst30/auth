@@ -68,4 +68,10 @@ public class OAuth2AuthCode implements Serializable {
      */
     @Getter @Setter private String accessToken;
 
+    /**
+     * The refresh token associate with this authorization code
+     * <p>This will be null unless the client requested an authorization code using a hybrid flow with token</p>
+     */
+    @Getter @Setter private String refreshToken;
+
 }
