@@ -2,21 +2,17 @@ package io.keystash;
 
 import io.keystash.common.configuration.JpaConfiguration;
 import io.keystash.common.persistence.JpaEntityDao;
-import io.keystash.factories.hk2.AuthenticatedUserFactory;
-import io.keystash.factories.hk2.ConfigurationProviderFactory;
-import io.keystash.factories.hk2.HttpSessionFactory;
-import io.keystash.factories.hk2.JpaConfigurationFactory;
+import io.keystash.factories.hk2.*;
 import io.keystash.factories.jose.JwsAlgorithmFactory;
 import io.keystash.factories.jose.KeyProviderFactory;
 import io.keystash.filters.AuthenticationFilter;
 import io.keystash.common.models.authentication.AuthenticatedUser;
 import io.keystash.common.models.jpa.AllowedScope;
+import io.keystash.models.web.HostInfo;
 import io.keystash.persistence.*;
 import io.keystash.common.persistence.hibernate.HibernateDao;
 import io.keystash.common.persistence.hibernate.HibernateSessionProvider;
-import io.keystash.services.authentication.AuthenticationService;
-import io.keystash.services.authentication.DefaultUserInfoService;
-import io.keystash.services.authentication.UserInfoService;
+import io.keystash.services.authentication.*;
 import io.keystash.services.authorization.AuthorizationService;
 import io.keystash.services.jose.JwtTokenService;
 import io.keystash.services.jose.KeyManager;
@@ -71,6 +67,7 @@ public class AuthCore extends ResourceConfig {
                 bind(AccountDao.class).to(AccountDao.class).in(Singleton.class);
                 bind(AllowedScope.class).to(AllowedScope.class).in(Singleton.class);
                 bind(AppKeyDao.class).to(AppKeyDao.class).in(Singleton.class);
+                bind(OpenIdProviderConfigDao.class).to(OpenIdProviderConfigDao.class).to(Singleton.class);
                 bind(PlatformClientDao.class).to(PlatformClientDao.class).in(Singleton.class);
                 bind(ScopeDao.class).to(ScopeDao.class).in(Singleton.class);
 
@@ -78,8 +75,12 @@ public class AuthCore extends ResourceConfig {
                 bind(JwsAlgorithmFactory.class).to(JwsAlgorithmFactory.class).in(Singleton.class);
                 bind(KeyProviderFactory.class).to(KeyProviderFactory.class).in(Singleton.class);
 
+                // Misc
+                bindFactory(HostInfoFactory.class).to(HostInfo.class);
+
                 // Service Layer
                 bind(AuthenticationService.class).to(AuthenticationService.class).in(Singleton.class);
+                bind(DefaultDiscoveryService.class).to(DiscoveryService.class).in(Singleton.class);
                 bind(JwtTokenService.class).to(TokenService.class).in(Singleton.class);
                 bind(KeyManagerImpl.class).to(KeyManager.class).in(Singleton.class);
                 bind(AuthorizationService.class).to(AuthorizationService.class).in(Singleton.class);

@@ -65,6 +65,7 @@ public final class HibernateConfigurationUtil {
                     .addAnnotatedClass(AllowedScope.class)
                     .addAnnotatedClass(AppKey.class)
                     .addAnnotatedClass(AppKeyConfig.class)
+                    .addAnnotatedClass(OpenIdProviderConfig.class)
                     .addAnnotatedClass(PlatformClient.class)
                     .addAnnotatedClass(RedirectUri.class);
 

@@ -138,6 +138,10 @@ public class JwtTokenService implements TokenService {
     }
 
     private String getHashFromSourceForIdToken(String source, Algorithm algorithm) {
+        // TODO this is incorrect.... we are creating a signature instead of just hashing. We should use something
+        // TODO more like AuthenticationUtils.getSubjectIdentifierForUser and we will have to figure out how to deal
+        // TODO with HMAC
+
         // Hash the token with the algorithm provided (same as used to sign ID token)
         byte[] hashedTokenBytes = algorithm.sign(source.getBytes());
 
