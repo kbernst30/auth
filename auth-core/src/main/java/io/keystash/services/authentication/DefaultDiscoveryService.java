@@ -1,7 +1,11 @@
 package io.keystash.services.authentication;
 
 import io.keystash.common.exceptions.jpa.JpaExecutionException;
+import io.keystash.common.models.authentication.oidc.OidcResponseType;
+import io.keystash.common.models.common.AuthorizationResponseType;
 import io.keystash.common.models.jpa.OpenIdProviderConfig;
+import io.keystash.common.models.oauth.OAuth2GrantType;
+import io.keystash.common.models.oauth.OAuth2ResponseType;
 import io.keystash.models.authentication.OpenIdProviderMetadata;
 import io.keystash.models.web.HostInfo;
 import io.keystash.persistence.OpenIdProviderConfigDao;
@@ -9,8 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 public class DefaultDiscoveryService implements DiscoveryService {
@@ -27,6 +32,9 @@ public class DefaultDiscoveryService implements DiscoveryService {
     @Override
     public OpenIdProviderMetadata discoverOpenIdConfiguration() {
         List<OpenIdProviderConfig> openIdProviderConfigs = getOpenIdProviderConfigs();
+
+        // TODO add in the user specified configurations
+
         return buildOpenIdProviderMetadata();
     }
 
@@ -49,6 +57,42 @@ public class DefaultDiscoveryService implements DiscoveryService {
         openIdProviderMetadata.setUserInfoEndpoint(hostInfo.getBaseUrl() + "userinfo");
         openIdProviderMetadata.setJwksUri(hostInfo.getBaseUrl()); // TODO real
 
+        openIdProviderMetadata.setSubjectTypesSupported(Stream.of("pairwise", "public").collect(Collectors.toSet()));
+        openIdProviderMetadata.setIdTokenEncryptionAlgValuesSupported(Stream.of("RS256", "HS256").collect(Collectors.toSet()));
+        openIdProviderMetadata.setResponseTypesSupported(getSupportedResponseTypes());
+        openIdProviderMetadata.setGrantTypesSupported(Stream.of(OAuth2GrantType.values())
+                .map(OAuth2GrantType::name)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet()));
+
         return openIdProviderMetadata;
+    }
+
+    private Set<String> getSupportedResponseTypes() {
+        Set<String> supportedResponseTypes = new HashSet<>();
+
+        supportedResponseTypes.addAll(Arrays.stream(OAuth2ResponseType.values())
+                .map(OAuth2ResponseType::name)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet()));
+
+        supportedResponseTypes.addAll(Arrays.stream(OidcResponseType.values())
+                .map(OidcResponseType::name)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet()));
+
+        // Add the combined Open ID Connect response types
+        String codeTokenResponse = OAuth2ResponseType.CODE.name() + " " + OAuth2ResponseType.TOKEN.name();
+        String codeIdTokenResponse = OAuth2ResponseType.CODE.name() + " " + OidcResponseType.ID_TOKEN.name();
+        String idTokenTokenResponse = OidcResponseType.ID_TOKEN.name() + " " + OAuth2ResponseType.TOKEN.name();
+        String codeIdTokenTokenResponse = OAuth2ResponseType.CODE.name() + " " + OidcResponseType.ID_TOKEN.name() +
+                " " + OAuth2ResponseType.TOKEN.name();
+
+        supportedResponseTypes.add(codeTokenResponse.toLowerCase());
+        supportedResponseTypes.add(codeIdTokenResponse.toLowerCase());
+        supportedResponseTypes.add(idTokenTokenResponse.toLowerCase());
+        supportedResponseTypes.add(codeIdTokenTokenResponse.toLowerCase());
+
+        return supportedResponseTypes;
     }
 }

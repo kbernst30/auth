@@ -2,8 +2,6 @@ package io.keystash.models.authentication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.keystash.common.models.authentication.oidc.OidcUserInterfaceDisplay;
-import io.keystash.common.models.oauth.OAuth2GrantType;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -86,7 +84,7 @@ public class OpenIdProviderMetadata {
      * An array containing a list of valid OAuth2.0 grant types
      */
     @JsonProperty("grant_types_supported")
-    @Getter @Setter private Set<OAuth2GrantType> grantTypesSupported;
+    @Getter @Setter private Set<String> grantTypesSupported;
 
     /**
      * An array containing a list of supported Authentication Context Class References
@@ -178,7 +176,7 @@ public class OpenIdProviderMetadata {
      * An array containing a list of valid "display" parameter values
      */
     @JsonProperty("display_values_supported")
-    @Getter @Setter private Set<OidcUserInterfaceDisplay> displayValuesSupported;
+    @Getter @Setter private Set<String> displayValuesSupported;
 
     /**
      * An array containing a list of supported claim types

@@ -17,16 +17,9 @@ import java.util.Set;
  */
 public class JwsAlgorithmFactory {
 
-    private final KeyManager keyManager;
+    public Algorithm createAlgorithmForSignature(SigningKey activeKey) throws SigningKeyException {
 
-    @Inject
-    public JwsAlgorithmFactory(KeyManager keyManager) {
-        this.keyManager = keyManager;
-    }
-
-    public Algorithm createAlgorithmForSignature() throws SigningKeyException {
-
-        Algorithm algorithm = createAlgorithm(this.keyManager.getActiveKey());
+        Algorithm algorithm = createAlgorithm(activeKey);
         if (algorithm == null) {
             throw new SigningKeyException("No valid key was found to create an algorithm for.");
         }
@@ -34,14 +27,13 @@ public class JwsAlgorithmFactory {
         return algorithm;
     }
 
-    public Set<Algorithm> createAlgorithmsForVerification() throws SigningKeyException {
+    public Set<Algorithm> createAlgorithmsForVerification(SigningKey activeKey, Set<SigningKey> passiveKeys) throws SigningKeyException {
         Set<Algorithm> algorithms = new HashSet<>();
-        SigningKey activeKey = this.keyManager.getActiveKey();
         if (activeKey != null) {
             algorithms.add(createAlgorithm(activeKey));
         }
 
-        for (SigningKey signingKey : this.keyManager.getPassiveKeys()) {
+        for (SigningKey signingKey : passiveKeys) {
             algorithms.add(createAlgorithm(signingKey));
         }
 
