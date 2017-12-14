@@ -196,14 +196,14 @@ public class JwtTokenService implements TokenService {
     }
 
     private byte[] getHmacSourceHash(String source, String secret) {
-        Mac hmacShas256;
+        Mac hmacSha256;
         try {
-            hmacShas256 = Mac.getInstance("HmacSHA256");
-            hmacShas256.init(new SecretKeySpec(secret.getBytes(), "HmacSHA256"));
+            hmacSha256 = Mac.getInstance("HmacSHA256");
+            hmacSha256.init(new SecretKeySpec(secret.getBytes(), "HmacSHA256"));
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             throw new RuntimeException("Unable to hash source using HmacSHA256", e);
         }
 
-        return hmacShas256.doFinal(source.getBytes());
+        return hmacSha256.doFinal(source.getBytes());
     }
 }
