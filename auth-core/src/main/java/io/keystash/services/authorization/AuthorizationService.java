@@ -324,9 +324,7 @@ public class AuthorizationService {
 
     private void verifyClientAuthorizationValidity(BasicAuthorizationDetails authorizationDetails, PlatformClient client) {
 
-        if (client.getClientSecret() != null &&
-                !AuthenticationUtils.checkPassword(authorizationDetails.getClientSecret(), client.getClientSecret())) {
-
+        if (client.getClientSecret() != null && !client.getClientSecret().equals(authorizationDetails.getClientSecret())) {
             throw new InvalidClientException(String.format("Client [%s] is invalid or the provided secret was " +
                     "incorrect.", client.getClientId()));
         }
