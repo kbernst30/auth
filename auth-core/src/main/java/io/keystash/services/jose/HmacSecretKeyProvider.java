@@ -7,6 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class HmacSecretKeyProvider implements SecretKeyProvider {
 
+    @Getter private final String keyId;
     @Getter private final String secret;
     @Getter private final boolean active;
     @Getter private final boolean passive;
@@ -14,5 +15,10 @@ public class HmacSecretKeyProvider implements SecretKeyProvider {
     @Override
     public JwsAlgorithmType getAlgorithmType() {
         return JwsAlgorithmType.HMAC;
+    }
+
+    @Override
+    public String getId() {
+        return keyId;
     }
 }

@@ -10,10 +10,13 @@ import lombok.*;
 @AllArgsConstructor
 public class HmacKey implements SecretKey {
 
+    @Getter @Setter private String kid;
     @Getter @Setter private String secret;
 
     @Override
     public JwsAlgorithmType getAlgorithm() {
         return JwsAlgorithmType.HMAC;
     }
+
+
 }

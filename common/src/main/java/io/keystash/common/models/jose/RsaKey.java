@@ -13,8 +13,9 @@ import java.security.interfaces.RSAPublicKey;
 @AllArgsConstructor
 public class RsaKey implements PublicPrivateKey {
 
-    @Getter @Setter private final RSAPublicKey publicKey;
-    @Getter @Setter private final RSAPrivateKey privateKey;
+    @Getter private final String kid;
+    @Getter private final RSAPublicKey publicKey;
+    @Getter private final RSAPrivateKey privateKey;
 
     @Override
     public JwsAlgorithmType getAlgorithm() {

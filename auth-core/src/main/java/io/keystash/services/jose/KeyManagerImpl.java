@@ -77,11 +77,11 @@ public class KeyManagerImpl implements KeyManager {
     }
 
     private HmacKey createHmacKey(HmacSecretKeyProvider hmacSecretKeyProvider) {
-        return new HmacKey(hmacSecretKeyProvider.getSecret());
+        return new HmacKey(hmacSecretKeyProvider.getKeyId(), hmacSecretKeyProvider.getSecret());
     }
 
     private RsaKey createRsaKey(RsaKeyProvider rsaKeyProvider) {
-        return new RsaKey(rsaKeyProvider.getPublicKey(), rsaKeyProvider.getPrivateKey());
+        return new RsaKey(rsaKeyProvider.getKeyId(), rsaKeyProvider.getPublicKey(), rsaKeyProvider.getPrivateKey());
     }
 
     private List<KeyProvider> getKeyProviders() {

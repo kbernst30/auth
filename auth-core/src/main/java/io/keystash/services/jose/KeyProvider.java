@@ -25,4 +25,9 @@ public interface KeyProvider {
      */
     boolean isPassive();
 
+    /**
+     * Gets the Key ID value to be used for reference purposes
+     * @return a String ID value
+     */
+    String getId();
 }

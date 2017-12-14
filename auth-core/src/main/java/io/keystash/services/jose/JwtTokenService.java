@@ -47,8 +47,11 @@ public class JwtTokenService implements TokenService {
         JWTCreator.Builder jwtCreator = JWT.create();
         Date now = new Date();
 
+        SigningKey activeKey = this.keyManager.getActiveKey();
+
         // Create some defaults
         jwtCreator.withJWTId(UUID.randomUUID().toString());
+        jwtCreator.withKeyId(activeKey.getKid());
         jwtCreator.withIssuedAt(now);
         jwtCreator.withExpiresAt(new DateTime(now).plusSeconds(expiryTimeInSeconds).toDate());
 
@@ -57,7 +60,7 @@ public class JwtTokenService implements TokenService {
         claims.forEach(jwtCreator::withClaim);
 
         try {
-            return jwtCreator.sign(jwsAlgorithmFactory.createAlgorithmForSignature(this.keyManager.getActiveKey()));
+            return jwtCreator.sign(jwsAlgorithmFactory.createAlgorithmForSignature(activeKey));
         } catch (SigningKeyException e) {
             throw new TokenException("Failed to create a JWT due to a problem with the signing key", e);
         }
@@ -72,14 +75,17 @@ public class JwtTokenService implements TokenService {
 
         Date now = new Date();
 
+        SigningKey activeKey = this.keyManager.getActiveKey();
+
         // Create some defaults
         jwtCreator.withJWTId(UUID.randomUUID().toString());
+        jwtCreator.withKeyId(activeKey.getKid());
         jwtCreator.withIssuedAt(now);
         jwtCreator.withExpiresAt(new DateTime(decodedAccessToken.getExpiresAt()).plusDays(7).toDate());
         jwtCreator.withClaim("ati", decodedAccessToken.getId());
 
         try {
-            return jwtCreator.sign(jwsAlgorithmFactory.createAlgorithmForSignature(this.keyManager.getActiveKey()));
+            return jwtCreator.sign(jwsAlgorithmFactory.createAlgorithmForSignature(activeKey));
         } catch (SigningKeyException e) {
             throw new TokenException("Failed to create a JWT due to a problem with the signing key", e);
         }
@@ -119,6 +125,7 @@ public class JwtTokenService implements TokenService {
                 jwtCreator.withClaim("c_hash", getHashFromSourceForIdToken(code, activeKey));
             }
 
+            jwtCreator.withKeyId(activeKey.getKid());
             return jwtCreator.sign(idTokenAlgorithm);
         } catch (SigningKeyException e) {
             throw new TokenException("Failed to create a JWT due to a problem with the signing key", e);

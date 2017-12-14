@@ -17,6 +17,7 @@ import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Constructs an appropriate key provider based on the algorithm used by the key
@@ -35,10 +36,10 @@ public class KeyProviderFactory {
         JwsAlgorithmType algorithmType = JwsAlgorithmType.valueOf(appKey.getAlgorithm().toUpperCase());
         switch (algorithmType) {
             case HMAC:
-                keyProvider = buildHmacKeyProvider(appKey.getConfigs());
+                keyProvider = buildHmacKeyProvider(appKey.getId(), appKey.getConfigs());
                 break;
             case RSA:
-                keyProvider = buildRsaKeyProvider(appKey.getConfigs());
+                keyProvider = buildRsaKeyProvider(appKey.getId(), appKey.getConfigs());
                 break;
             default:
                 keyProvider = null;
@@ -48,17 +49,19 @@ public class KeyProviderFactory {
         return keyProvider;
     }
 
-    private HmacSecretKeyProvider buildHmacKeyProvider(List<AppKeyConfig> appKeyConfigs) {
+    private HmacSecretKeyProvider buildHmacKeyProvider(int keyId, List<AppKeyConfig> appKeyConfigs) {
         boolean isActive = Boolean.parseBoolean(getConfigValueByName(appKeyConfigs, KeyConfigName.ACTIVE));
         boolean isPassive = Boolean.parseBoolean(getConfigValueByName(appKeyConfigs, KeyConfigName.PASSIVE));
+        String kid = UUID.nameUUIDFromBytes(String.valueOf(keyId).getBytes()).toString();
         String secret = getConfigValueByName(appKeyConfigs, KeyConfigName.SECRET);
 
-        return new HmacSecretKeyProvider(secret, isActive, isPassive);
+        return new HmacSecretKeyProvider(kid, secret, isActive, isPassive);
     }
 
-    private RsaKeyProvider buildRsaKeyProvider(List<AppKeyConfig> appKeyConfigs) {
+    private RsaKeyProvider buildRsaKeyProvider(int keyId, List<AppKeyConfig> appKeyConfigs) {
         boolean isActive = Boolean.parseBoolean(getConfigValueByName(appKeyConfigs, KeyConfigName.ACTIVE));
         boolean isPassive = Boolean.parseBoolean(getConfigValueByName(appKeyConfigs, KeyConfigName.PASSIVE));
+        String kid = UUID.nameUUIDFromBytes(String.valueOf(keyId).getBytes()).toString();
 
         PrivateKey privateKey = null;
         PublicKey publicKey = null;
@@ -74,7 +77,7 @@ public class KeyProviderFactory {
             log.warn("Failed to get private or public key... RSA signing of tokens using this key will likely fail.", e);
         }
 
-        return new RsaKeyProvider((RSAPublicKey) publicKey, (RSAPrivateKey) privateKey, isActive, isPassive);
+        return new RsaKeyProvider(kid, (RSAPublicKey) publicKey, (RSAPrivateKey) privateKey, isActive, isPassive);
     }
 
     private String getConfigValueByName(List<AppKeyConfig> appKeyConfigs, KeyConfigName keyConfigName) {

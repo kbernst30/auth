@@ -11,4 +11,9 @@ public interface SigningKey {
      */
     JwsAlgorithmType getAlgorithm();
 
+    /**
+     * Get the unique identifier for this signing key
+     * @return a String representing the key ID
+     */
+    String getKid();
 }

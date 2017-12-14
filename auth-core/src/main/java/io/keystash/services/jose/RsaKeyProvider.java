@@ -10,6 +10,7 @@ import java.security.interfaces.RSAPublicKey;
 @AllArgsConstructor
 public class RsaKeyProvider implements PublicPrivateKeyProvider {
 
+    @Getter private final String keyId;
     @Getter private final RSAPublicKey publicKey;
     @Getter private final RSAPrivateKey privateKey;
     @Getter private final boolean isActive;
@@ -18,5 +19,10 @@ public class RsaKeyProvider implements PublicPrivateKeyProvider {
     @Override
     public JwsAlgorithmType getAlgorithmType() {
         return JwsAlgorithmType.RSA;
+    }
+
+    @Override
+    public String getId() {
+        return keyId;
     }
 }

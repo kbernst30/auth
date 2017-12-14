@@ -58,7 +58,7 @@ public class AuthorizationServiceTest {
         SAMPLE_ACCOUNT.setPassword(AuthenticationUtils.getHashedPassword(TestUtils.SAMPLE_USER_PASSWORD));
 
         SAMPLE_PLATFORM_CLIENT.setClientId(TestUtils.SAMPLE_CLIENT_ID);
-        SAMPLE_PLATFORM_CLIENT.setClientSecret(AuthenticationUtils.getHashedPassword(TestUtils.SAMPLE_CLIENT_SECRET));
+        SAMPLE_PLATFORM_CLIENT.setClientSecret(TestUtils.SAMPLE_CLIENT_SECRET);
         SAMPLE_PLATFORM_CLIENT.setAutoApprove(true);
         SAMPLE_PLATFORM_CLIENT.setAccount(SAMPLE_ACCOUNT);
 
