@@ -1,5 +1,5 @@
 import uuidv4 from 'uuid/v4';
-import shajs from 'sha.js';
+import sha256 from 'sha256';
 
 const ACCESS_TOKEN_KEY = "at";
 const ID_TOKEN_KEY = "idt";
@@ -10,6 +10,7 @@ class Keystash {
         this.authorizationUrl = config.authorizationUrl;
         this.clientId = config.clientId;
         this.redirectUrl = config.redirectUrl;
+        this.discoveryUrl = config.discoveryUrl;
     }
 
     isAuthenticated() {
@@ -17,18 +18,41 @@ class Keystash {
     }
 
     isAuthorized() {
-        this._verifyAuth(localStorage.getItem(ACCESS_TOKEN_KEY), localStorage.getItem(ID_TOKEN_KEY));
         return !!localStorage.getItem(ACCESS_TOKEN_KEY);
     }
 
     authenticationIsExpired() {
-        // TODO implement
-        return false;
+        if (this.isAuthenticated()) {
+            let idToken = localStorage.getItem(ID_TOKEN_KEY),
+                jwtIdTokenParts = idToken.split(".");
+
+            if (jwtIdTokenParts.length !== 3) {
+                return true;
+            }
+
+            let idTokenClaims = JSON.parse(atob(jwtIdTokenParts[1]));
+
+            return (idTokenClaims["exp"] * 1000) < new Date();
+        }
+
+        return true;
     }
 
     authorizationIsExpired() {
-        // todo implement
-        return false;
+        if (this.isAuthenticated()) {
+            let accessToken = localStorage.getItem(ACCESS_TOKEN_KEY),
+                accessTokenParts = accessToken.split(".");
+
+            if (accessTokenParts.length !== 3) {
+                return true;
+            }
+
+            let accessTokenClaims = JSON.parse(atob(accessTokenParts[1]));
+
+            return (accessTokenClaims["exp"] * 1000) < new Date();
+        }
+
+        return true;
     }
 
     login() {
@@ -40,7 +64,8 @@ class Keystash {
     }
 
     refreshAuth() {
-        // TODO before doing a refresh, we need to ensure that we are still logged in to the auth server
+        // TODO this is for a silent refresh where we need new tokens without leaving the page
+        // TODO before doing a refresh, we should check that we are still logged in to the auth server
     }
 
     processAuth() {
@@ -69,12 +94,32 @@ class Keystash {
             error = authResponse["error"],
             errorDescription = authResponse["error_description"];
 
-        if (error || errorDescription || (!accessToken && !idToken)) {
-            // TODO figure out how we want to display the error
-            return false;
-        }
+        const resolveAuthProcessing = (errorMsg) => {
+            if (accessToken && !errorMsg) {
+                localStorage.setItem("at", decodeURIComponent(accessToken));
+            }
 
-        return this._verifyAuth(accessToken, idToken);
+            if (idToken && !errorMsg) {
+                localStorage.setItem("idt", decodeURIComponent(idToken));
+            }
+
+
+            if (authResponse['refresh'] && authResponse['refresh'] !== 'false' && !errorMsg) {
+                window.top.location.reload();
+            } else {
+                window.top.location.href = "/index.html" + (errorMsg ? "?error=" + decodeURIComponent(errorMsg) : "");
+            }
+        };
+
+        if (error || errorDescription || (!accessToken && !idToken)) {
+            resolveAuthProcessing(errorDescription);
+        } else {
+            let ths = this;
+            fetch(this.discoveryUrl)
+                .then(res => res.json())
+                .then(serverConfig => ths._verifyAuth(accessToken, idToken, serverConfig))
+                .then(verified => resolveAuthProcessing(!verified && "The sign on could not be verified. Please contact the server administrator."));
+        }
     }
 
     _getUrlForLogin() {
@@ -98,16 +143,50 @@ class Keystash {
         return uuidv4();
     }
 
-    _verifyAuth(accessToken, idToken) {
-        let isAccessTokenValid = this._verifyAccessToken(accessToken, idToken);
+    _verifyAuth(accessToken, idToken, serverConfig) {
+        let isAccessTokenValid = this._verifyAccessToken(accessToken, idToken),
+            isIdTokenValid = this._verifyIdToken(idToken, serverConfig);
+
+        return isAccessTokenValid && isIdTokenValid;
     }
 
-    _verifyIdToken(idToken) {
+    _verifyIdToken(idToken, serverConfig) {
+        let jwtIdTokenParts = idToken.split(".");
 
+        if (jwtIdTokenParts.length !== 3) {
+            return false;
+        }
+
+        // Validate the claims
+        let idTokenClaims = JSON.parse(atob(jwtIdTokenParts[1])),
+            idTokenJose = JSON.parse(atob(jwtIdTokenParts[0]));
+
+        // Issuer of token is issuer specified in discovery
+        if (idTokenClaims["iss"] !== serverConfig["issuer"]) {
+            return false;
+        }
+
+        // The client ID is a valid audience
+        if (idTokenClaims["aud"] !== this.clientId) {
+            return false;
+        }
+
+        // The Signing algorithm of the token is supported by the server
+        if (serverConfig["id_token_encryption_alg_values_supported"].indexOf(idTokenJose["alg"]) === -1) {
+            return false;
+        }
+
+        // The exp is in the future
+        if ((idTokenClaims["exp"] * 1000) < new Date()) {
+            return false;
+        }
+
+        // TODO Nonce
+
+        return true;
     }
 
     _verifyAccessToken(accessToken, idToken) {
-        // TODO finish this
         let jwtAccessTokenParts = accessToken.split("."),
             jwtIdTokenParts = idToken.split(".");
 
@@ -120,19 +199,32 @@ class Keystash {
             return false;
         }
 
-        let idTokenClaims = JSON.parse(atob(jwtIdTokenParts[1]));
+        // Validate token against at_hash in idToken
+        let idTokenClaims = JSON.parse(atob(jwtIdTokenParts[1])),
+            accessTokenClaims = JSON.parse(atob(jwtAccessTokenParts[1]));
 
-        // TODO check algorithm in id token
-        let hashedAccessToken = shajs('sha256').update(accessToken).digest('hex'),
-            atHashLeftHalf = hashedAccessToken.substring(0, hashedAccessToken.length / 2);
-        console.log(hashedAccessToken, atHashLeftHalf, btoa(atHashLeftHalf), idTokenClaims["at_hash"]);
+        let hashedAccessToken = sha256(accessToken, { asBytes: "true"}),
+            atHashLeftHalf = hashedAccessToken.splice(0, hashedAccessToken.length / 2),
+            encodedAtHash = btoa(String.fromCharCode.apply(null, new Uint8Array(atHashLeftHalf)));
+
+        if (idTokenClaims["at_hash"] !== encodedAtHash) {
+            return false;
+        }
+
+        // The exp is in the future
+        if ((accessTokenClaims["exp"] * 1000) < new Date()) {
+            return false;
+        }
+
+        return true;
     }
 }
 
 const keystash = new Keystash({
     clientId: "my-client",
-    redirectUrl: "http://localhost:7000/processAuth.html",
-    authorizationUrl: "http://localhost:8080/auth/oauth/authorize"
+    redirectUrl: "http://localhost:7000?authorizing=true",
+    authorizationUrl: "http://localhost:8080/auth/oauth/authorize",
+    discoveryUrl: "http://localhost:8080/auth/.well-known/openid-configuration"
 });
 
 export default keystash;
