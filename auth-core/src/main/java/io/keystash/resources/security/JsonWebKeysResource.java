@@ -13,6 +13,16 @@ import javax.ws.rs.core.Response;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Resource for discovery of public RSA keys, represented as a JSON Web Key Set
+ * <p>
+ *     Clients will need public keys to verify authenticity of ID tokens that are issued by this authorization server
+ * </p>
+ * <p>
+ *     This is ONLY for discovery of public keys. No Symmetric keys will be published from this endpoint as secrets
+ *     should not be publicly accessible.
+ * </p>
+ */
 @Path("/jwks")
 public class JsonWebKeysResource {
 
@@ -40,7 +50,7 @@ public class JsonWebKeysResource {
         }
 
         JwkSet jwkSet = new JwkSet();
-        jwkSet.setKeys(jsonWebKeys);
+        jwkSet.setKeys(jsonWebKeys.stream().filter(key -> key.getKeyType() == JwaKeyType.RSA).collect(Collectors.toSet()));
         return Response.ok(jwkSet).build();
     }
 
