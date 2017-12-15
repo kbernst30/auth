@@ -55,7 +55,7 @@ public class DefaultDiscoveryService implements DiscoveryService {
         openIdProviderMetadata.setAuthorizationEndpoint(hostInfo.getBaseUrl() + "oauth/authorize");
         openIdProviderMetadata.setTokenEndpoint(hostInfo.getBaseUrl() + "oauth/token");
         openIdProviderMetadata.setUserInfoEndpoint(hostInfo.getBaseUrl() + "userinfo");
-        openIdProviderMetadata.setJwksUri(hostInfo.getBaseUrl()); // TODO real
+        openIdProviderMetadata.setJwksUri(hostInfo.getBaseUrl() + "jwks");
 
         openIdProviderMetadata.setSubjectTypesSupported(Stream.of("pairwise", "public").collect(Collectors.toSet()));
         openIdProviderMetadata.setIdTokenEncryptionAlgValuesSupported(Stream.of("RS256", "HS256").collect(Collectors.toSet()));

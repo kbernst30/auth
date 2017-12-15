@@ -3,6 +3,7 @@ package io.keystash;
 import io.keystash.common.configuration.JpaConfiguration;
 import io.keystash.common.persistence.JpaEntityDao;
 import io.keystash.factories.hk2.*;
+import io.keystash.factories.jose.JwkFactory;
 import io.keystash.factories.jose.JwsAlgorithmFactory;
 import io.keystash.factories.jose.KeyProviderFactory;
 import io.keystash.filters.AuthenticationFilter;
@@ -72,6 +73,7 @@ public class AuthCore extends ResourceConfig {
                 bind(ScopeDao.class).to(ScopeDao.class).in(Singleton.class);
 
                 // Factories
+                bind(JwkFactory.class).to(JwkFactory.class).in(Singleton.class);
                 bind(JwsAlgorithmFactory.class).to(JwsAlgorithmFactory.class).in(Singleton.class);
                 bind(KeyProviderFactory.class).to(KeyProviderFactory.class).in(Singleton.class);
 
