@@ -57,8 +57,9 @@ public class DefaultDiscoveryService implements DiscoveryService {
         openIdProviderMetadata.setUserInfoEndpoint(hostInfo.getBaseUrl() + "userinfo");
         openIdProviderMetadata.setJwksUri(hostInfo.getBaseUrl() + "jwks");
 
+        // For now only support RSA key pairs as valid signing
+        openIdProviderMetadata.setIdTokenEncryptionAlgValuesSupported(Stream.of("RS256").collect(Collectors.toSet()));
         openIdProviderMetadata.setSubjectTypesSupported(Stream.of("pairwise", "public").collect(Collectors.toSet()));
-        openIdProviderMetadata.setIdTokenEncryptionAlgValuesSupported(Stream.of("RS256", "HS256").collect(Collectors.toSet()));
         openIdProviderMetadata.setResponseTypesSupported(getSupportedResponseTypes());
         openIdProviderMetadata.setGrantTypesSupported(Stream.of(OAuth2GrantType.values())
                 .map(OAuth2GrantType::name)
