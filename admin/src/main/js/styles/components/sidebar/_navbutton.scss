@@ -1,0 +1,16 @@
+.navbutton {
+  color: #AAAAAA;
+  font-size: 14px;
+  background: $theme-secondary;
+  padding: 10px 30px;
+  cursor: pointer;
+
+  &.active, &:hover {
+    background: lighten($theme-secondary, 10%);
+  }
+
+  &.active {
+    border-left: 5px solid $theme-primary;
+    padding-left: 25px;
+  }
+}

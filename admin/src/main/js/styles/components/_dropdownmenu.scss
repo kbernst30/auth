@@ -1,11 +1,9 @@
 .dropdown-menu {
   @include flex-box;
+  @include align-items(center);
 
   background: inherit;
   position: relative;
-
-  align-items: center;
-  -webkit-align-items: center;
 
   height: 100%;
   cursor: pointer;

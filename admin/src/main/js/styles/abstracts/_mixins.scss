@@ -5,3 +5,18 @@
   display: -webkit-flex;
   display: flex;
 }
+
+@mixin flex($flex) {
+  flex: $flex;
+  -webkit-flex: $flex;
+}
+
+@mixin align-items($alignment) {
+  align-items: $alignment;
+  -webkit-align-items: $alignment;
+}
+
+@mixin flex-direction($direction) {
+  flex-direction: $direction;
+  -webkit-flex-direction: $direction;
+}

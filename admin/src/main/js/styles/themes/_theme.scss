@@ -1,3 +1,7 @@
+html {
+  height: 100%;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -7,6 +11,8 @@ body {
   letter-spacing: 0.7px;
 
   background: $main-background;
+
+  height: 100%;
 }
 
 body, div, span {
