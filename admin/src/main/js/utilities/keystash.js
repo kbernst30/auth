@@ -91,6 +91,7 @@ class Keystash {
 
         let accessToken = authResponse["access_token"],
             idToken = authResponse["id_token"],
+            sessionState = authResponse["session_state"],
             error = authResponse["error"],
             errorDescription = authResponse["error_description"];
 
@@ -103,6 +104,9 @@ class Keystash {
                 localStorage.setItem("idt", decodeURIComponent(idToken));
             }
 
+            if (sessionState && !errorMsg) {
+                localStorage.setItem("ss", decodeURIComponent(sessionState));
+            }
 
             if (authResponse['refresh'] && authResponse['refresh'] !== 'false' && !errorMsg) {
                 window.top.location.reload();

@@ -1,6 +1,7 @@
 package io.keystash.dist;
 
-import io.keystash.AuthCore;
+import io.keystash.admin.AdminConsole;
+import io.keystash.core.AuthCore;
 import io.keystash.dist.debug.AdminConsoleDebugServlet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.scan.StandardJarScanner;
@@ -84,7 +85,12 @@ public class Main {
     }
 
     private static ServletContextHandler getAdminConsoleContext(boolean isDebug) {
+        AdminConsole adminConsole = new AdminConsole();
+
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+
+        ServletHolder servlet = new ServletHolder(new ServletContainer(adminConsole));
+        context.addServlet(servlet, "/rest/*");
 
         context.setContextPath("/admin");
 
@@ -96,8 +102,8 @@ public class Main {
             context.addServlet(defaultServlet, "/");
 
         } else {
-            ServletHolder servlet = new ServletHolder(new AdminConsoleDebugServlet());
-            context.addServlet(servlet, "/*");
+            ServletHolder debugServletHolder = new ServletHolder(new AdminConsoleDebugServlet());
+            context.addServlet(debugServletHolder, "/*");
         }
 
         return context;
