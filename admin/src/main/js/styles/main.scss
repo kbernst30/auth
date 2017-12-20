@@ -3,8 +3,17 @@
 
 @import 'components/adminconsole';
 @import 'components/dropdownmenu';
+@import 'components/pageheader';
+
+@import 'components/clients/clientmanager';
+
 @import 'components/sidebar/navbutton';
 @import 'components/sidebar/sidebar';
+
+@import 'components/table/cell';
+@import 'components/table/row';
+@import 'components/table/table';
+
 @import 'components/topbar/topbar';
 
 @import 'themes/theme';

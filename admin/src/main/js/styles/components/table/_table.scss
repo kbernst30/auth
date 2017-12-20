@@ -1,0 +1,13 @@
+.data-table {
+  @include flex-box;
+  @include flex-direction(column);
+
+  border: 1px solid $main-border-color;
+  overflow: hidden;
+
+  .data-table-body {
+    @include flex(1);
+
+    overflow: auto;
+  }
+}

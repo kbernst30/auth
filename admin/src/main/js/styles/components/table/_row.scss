@@ -1,0 +1,19 @@
+.data-table-row, .data-table-header {
+  @include flex-box;
+  @include align-items(center);
+
+  width: 100%;
+}
+
+.data-table-row {
+
+  &:nth-child(even) {
+    background: #F0F0F0;
+  }
+
+}
+
+.data-table-header {
+  border-bottom: 1px solid $main-border-color;
+  background: #EFEFEF;
+}
