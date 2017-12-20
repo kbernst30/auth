@@ -10,5 +10,9 @@
     @include flex(1);
 
     width: 100%;
+
+    .admin-console-main {
+      @include flex(1)
+    }
   }
 }

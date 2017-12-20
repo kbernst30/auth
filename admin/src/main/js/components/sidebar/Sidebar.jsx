@@ -17,14 +17,18 @@ const mapDispatchToProps = (dispatch) => {
     };
 };
 
-const SidebarBody = () => (
+const SidebarBody = ({ currentLocation }) => (
     <div className="sidebar">
-        <NavButton icon="sitemap" text="Clients" />
-        <NavButton icon="star" text="Scopes" />
-        <NavButton icon="users" text="Users" />
-        <NavButton icon="cogs" text="Settings" />
+        <NavButton active={currentLocation === "/clients"} icon="sitemap" path="/clients" text="Clients" />
+        <NavButton active={currentLocation === "/scopes"} icon="star" path="/scopes" text="Scopes" />
+        <NavButton active={currentLocation === "/users"} icon="users" path="/users" text="Users" />
+        <NavButton active={currentLocation === "/settings"} icon="cogs" path="/settings" text="Settings" />
     </div>
 );
+
+SidebarBody.propTypes = {
+    currentLocation: PropTypes.string.isRequired
+};
 
 const Sidebar = connect(mapStateToProps, mapDispatchToProps)(SidebarBody);
 
