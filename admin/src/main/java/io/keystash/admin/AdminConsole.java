@@ -1,5 +1,7 @@
 package io.keystash.admin;
 
+import io.keystash.admin.factories.hk2.ResourceOwnerFactory;
+import io.keystash.admin.models.ResourceOwner;
 import io.keystash.common.configuration.JpaConfiguration;
 import io.keystash.common.factories.hk2.ConfigurationProviderFactory;
 import io.keystash.common.factories.hk2.JpaConfigurationFactory;
@@ -57,6 +59,9 @@ public class AdminConsole extends ResourceConfig {
                 bind(JwkFactory.class).to(JwkFactory.class).in(Singleton.class);
                 bind(JwsAlgorithmFactory.class).to(JwsAlgorithmFactory.class).in(Singleton.class);
                 bind(KeyProviderFactory.class).to(KeyProviderFactory.class).in(Singleton.class);
+
+                // Misc
+                bindFactory(ResourceOwnerFactory.class).to(ResourceOwner.class);
 
                 // Services
                 bind(JwtTokenService.class).to(TokenService.class).in(Singleton.class);

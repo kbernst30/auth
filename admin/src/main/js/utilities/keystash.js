@@ -136,7 +136,7 @@ class Keystash {
         url += "client_id=" + encodeURIComponent(this.clientId) +
             "&redirect_uri=" + encodeURIComponent(this.redirectUrl) +
             "&response_type=token%20id_token" +
-            "&scope=openid" +
+            "&scope=openid,privileged" +
             "&state=" + encodeURIComponent(this._generateUuid()) +
             "&nonce=" + encodeURIComponent(this._generateUuid());
 

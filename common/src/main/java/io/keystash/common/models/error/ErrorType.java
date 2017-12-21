@@ -37,6 +37,7 @@ public final class ErrorType {
         INVALID_SCOPE("invalid_scope", "Requested scope was invalid for client_id [%s]: %s"),
         REDIRECT_URI_HAS_FRAGMENT("invalid_request", "redirect_uri must not contain fragments"),
         SERVER_ERROR("server_error", "An unknown error occurred"),
+        UNAUTHORIZED_SCOPE("invalid_scope", "[%s] scope(s) are required to access this resource"),
         UNKNOWN_CLIENT_ID("invalid_request", "No client exists for given client_id: %s"),
         UNKNOWN_REDIRECT_URI("invalid_request", "The requested redirect_uri is not registered for this client."),
         UNKNOWN_USER("invalid_request", "Username and password credentials are invalid."),

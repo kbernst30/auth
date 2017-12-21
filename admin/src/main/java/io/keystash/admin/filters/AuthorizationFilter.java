@@ -19,6 +19,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Provider
@@ -39,9 +44,17 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         Method resourceMethod = resourceInfo.getResourceMethod();
 
         if (resourceMethod.isAnnotationPresent(Authorization.class)) {
-            String authorizationHeader = ((ContainerRequest) containerRequestContext).getHeaderString(HttpHeaders.AUTHORIZATION);
+            String authorizationHeader = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
             String token = AuthorizationUtils.getAccessTokenFromHeader(authorizationHeader, tokenService);
-            System.out.println(token);
+
+            Authorization authorizationRequired = resourceMethod.getAnnotation(Authorization.class);
+
+            // Check scope
+            Set<String> scopes = Stream.of(tokenService.getTokenClaim(token, "scope").split(" ")).collect(Collectors.toSet());
+            List<String> requiredScopes = Arrays.asList(authorizationRequired.scope());
+            if (!scopes.contains("privileged") && requiredScopes.size() > 0 && !scopes.containsAll(requiredScopes)) {
+                throw new OAuth2Exception(ErrorType.OAuth2.UNAUTHORIZED_SCOPE, Response.Status.FORBIDDEN, String.join(" ", requiredScopes));
+            }
         }
     }
 }
