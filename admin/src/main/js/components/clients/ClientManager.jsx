@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types'
 
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 import PageHeader from'../PageHeader';
 import Column from '../table/Column';
@@ -87,15 +88,21 @@ const clients = [
     }
 ];
 
-const ClientManagerBody = () => (
+const ClientManagerBody = ({ match }) => (
     <div className="client-manager">
         <PageHeader>Clients</PageHeader>
         <Table data={clients}
                height={400}>
 
-            <Column headerText="Client ID" dataKey="clientId" />
-            <Column headerText="Created" dataKey="created" />
-            <Column headerText="Last Accessed" dataKey="lastAccessed" />
+            <Column headerText="Client ID"
+                    dataKey="clientId"
+                    renderer={value => <Link to="/">{value}</Link>} />
+
+            <Column headerText="Created"
+                    dataKey="created" />
+
+            <Column headerText="Last Accessed"
+                    dataKey="lastAccessed" />
         </Table>
     </div>
 );

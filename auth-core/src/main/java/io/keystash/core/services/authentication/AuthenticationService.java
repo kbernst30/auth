@@ -7,7 +7,7 @@ import io.keystash.common.exceptions.jpa.JpaExecutionException;
 import io.keystash.core.models.authentication.LoginRequest;
 import io.keystash.common.models.authentication.AuthenticatedUser;
 import io.keystash.common.models.jpa.Account;
-import io.keystash.core.persistence.AccountDao;
+import io.keystash.common.persistence.AccountDao;
 import io.keystash.core.util.AuthenticationUtils;
 import lombok.extern.slf4j.Slf4j;
 

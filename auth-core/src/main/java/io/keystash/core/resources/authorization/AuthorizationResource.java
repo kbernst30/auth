@@ -1,7 +1,7 @@
 package io.keystash.core.resources.authorization;
 
-import io.keystash.core.exceptions.OAuth2Exception;
-import io.keystash.core.exceptions.OpenIdConnectException;
+import io.keystash.common.exceptions.OAuth2Exception;
+import io.keystash.common.exceptions.OpenIdConnectException;
 import io.keystash.core.exceptions.authorization.AuthorizationException;
 import io.keystash.common.models.authentication.AuthenticatedUser;
 import io.keystash.common.models.authentication.oidc.OidcAuthenticationRequest;
@@ -13,7 +13,7 @@ import io.keystash.common.models.common.BasicAuthorizationDetails;
 import io.keystash.common.models.error.ErrorType;
 import io.keystash.core.services.authorization.AuthorizationService;
 import io.keystash.core.util.AuthenticationUtils;
-import io.keystash.core.util.AuthorizationUtils;
+import io.keystash.common.util.AuthorizationUtils;
 import io.keystash.core.util.Validations;
 import io.keystash.common.models.oauth.*;
 import lombok.extern.slf4j.Slf4j;

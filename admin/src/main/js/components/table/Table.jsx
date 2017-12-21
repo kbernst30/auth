@@ -32,7 +32,7 @@ class Table extends React.Component {
             <Row key={itemIdx} height={this.props.rowHeight}>
                 {React.Children.map(this.props.children, (column, columnIdx) => (
                     <Cell>
-                        {item[column.props.dataKey]}
+                        {column.props.renderer ? column.props.renderer(item[column.props.dataKey]) : item[column.props.dataKey]}
                     </Cell>
                 ))}
             </Row>

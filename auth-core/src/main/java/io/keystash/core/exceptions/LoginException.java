@@ -1,5 +1,6 @@
 package io.keystash.core.exceptions;
 
+import io.keystash.common.exceptions.AbstractWebApplicationException;
 import io.keystash.core.models.authentication.LoginPageConfig;
 import io.keystash.common.models.error.ErrorResponse;
 import io.keystash.common.models.error.ErrorType;

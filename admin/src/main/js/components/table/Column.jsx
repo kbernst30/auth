@@ -16,6 +16,7 @@ class Column extends React.Component {
 Column.propTypes = {
     dataKey: PropTypes.string.isRequired,
     headerText: PropTypes.string.isRequired,
+    renderer: PropTypes.func,
     width: PropTypes.number
 };
 

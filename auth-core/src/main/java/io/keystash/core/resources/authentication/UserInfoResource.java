@@ -1,10 +1,11 @@
 package io.keystash.core.resources.authentication;
 
-import io.keystash.core.exceptions.OAuth2Exception;
+import io.keystash.common.exceptions.OAuth2Exception;
 import io.keystash.common.models.authentication.oidc.UserInfo;
 import io.keystash.common.models.error.ErrorType;
+import io.keystash.common.util.AuthorizationUtils;
 import io.keystash.core.services.authentication.UserInfoService;
-import io.keystash.core.services.jose.TokenService;
+import io.keystash.common.services.jose.TokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -35,7 +36,7 @@ public class UserInfoResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getInfoForUser(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        String accessToken = getAccessTokenFromHeader(authorizationHeader);
+        String accessToken = AuthorizationUtils.getAccessTokenFromHeader(authorizationHeader, tokenService);
         String userIdClaim = tokenService.getTokenClaim(accessToken, "account_id");
 
         try {
@@ -55,23 +56,4 @@ public class UserInfoResource {
         // We must support POST as per spec, but there is no difference in the request so just delegate to the main logic
         return getInfoForUser(authorizationHeader);
     }
-
-    private String getAccessTokenFromHeader(String authorizationHeader) {
-        if (StringUtils.isEmpty(authorizationHeader)) {
-            throw new OAuth2Exception(ErrorType.OAuth2.INVALID_ACCESS_TOKEN, Response.Status.UNAUTHORIZED);
-        }
-
-        String[] headerParts = authorizationHeader.split(" ");
-        if (headerParts.length != 2 || !headerParts[0].toLowerCase().equals("bearer")) {
-            throw new OAuth2Exception(ErrorType.OAuth2.INVALID_ACCESS_TOKEN, Response.Status.UNAUTHORIZED);
-        }
-
-        String token = headerParts[1];
-        if (!tokenService.isTokenValid(token)) {
-            throw new OAuth2Exception(ErrorType.OAuth2.EXPIRED_ACCESS_TOKEN, Response.Status.UNAUTHORIZED);
-        }
-
-        return token;
-    }
-
 }

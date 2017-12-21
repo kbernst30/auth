@@ -26,20 +26,6 @@ public class AuthenticationUtils {
         return null;
     }
 
-    public static String getSubjectIdentifierForUser(AuthenticatedUser authenticatedUser) {
-        MessageDigest sha256;
-        try {
-            sha256 = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            // Hardcoding the algorithm should mean we never get here
-            throw new RuntimeException("Unable to generate subject identifier for user", e);
-        }
-
-        String salt = authenticatedUser.getEmail() + ":" + authenticatedUser.getUserId(); // TODO more secure/random salt
-        byte[] hash = sha256.digest(salt.getBytes());
-        return UUID.nameUUIDFromBytes(hash).toString();
-    }
-
     public static String getSessionState(String client, String originUri, String sessionId) {
         String salt = BCrypt.gensalt();
         return getSessionStateWithSalt(client + " " + originUri + " " + sessionId + " " + salt, salt);

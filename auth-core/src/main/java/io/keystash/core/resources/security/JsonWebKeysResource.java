@@ -1,8 +1,8 @@
 package io.keystash.core.resources.security;
 
 import io.keystash.common.models.jose.*;
-import io.keystash.core.factories.jose.JwkFactory;
-import io.keystash.core.services.jose.KeyManager;
+import io.keystash.common.factories.jose.JwkFactory;
+import io.keystash.common.services.jose.KeyManager;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;

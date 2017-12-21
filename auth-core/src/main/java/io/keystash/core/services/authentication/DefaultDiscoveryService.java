@@ -6,7 +6,7 @@ import io.keystash.common.models.jpa.OpenIdProviderConfig;
 import io.keystash.common.models.oauth.OAuth2GrantType;
 import io.keystash.common.models.oauth.OAuth2ResponseType;
 import io.keystash.core.models.authentication.OpenIdProviderMetadata;
-import io.keystash.core.models.web.HostInfo;
+import io.keystash.common.models.web.HostInfo;
 import io.keystash.core.persistence.OpenIdProviderConfigDao;
 import lombok.extern.slf4j.Slf4j;
 

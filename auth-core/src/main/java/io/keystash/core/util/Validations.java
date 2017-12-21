@@ -1,8 +1,8 @@
 package io.keystash.core.util;
 
 import io.keystash.core.exceptions.LoginException;
-import io.keystash.core.exceptions.OAuth2Exception;
-import io.keystash.core.exceptions.OpenIdConnectException;
+import io.keystash.common.exceptions.OAuth2Exception;
+import io.keystash.common.exceptions.OpenIdConnectException;
 import io.keystash.core.models.authentication.LoginRequest;
 import io.keystash.common.models.authentication.oidc.OidcAuthenticationRequest;
 import io.keystash.common.models.authentication.oidc.OidcPrompt;

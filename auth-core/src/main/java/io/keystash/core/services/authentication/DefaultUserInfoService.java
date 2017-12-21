@@ -1,14 +1,14 @@
 package io.keystash.core.services.authentication;
 
-import io.keystash.core.exceptions.OpenIdConnectException;
+import io.keystash.common.exceptions.OpenIdConnectException;
+import io.keystash.common.util.AuthorizationUtils;
 import io.keystash.core.exceptions.authentication.UnknownUserInfoException;
 import io.keystash.common.exceptions.jpa.JpaExecutionException;
 import io.keystash.common.models.authentication.AuthenticatedUser;
 import io.keystash.common.models.authentication.oidc.UserInfo;
 import io.keystash.common.models.error.ErrorType;
 import io.keystash.common.models.jpa.Account;
-import io.keystash.core.persistence.AccountDao;
-import io.keystash.core.util.AuthenticationUtils;
+import io.keystash.common.persistence.AccountDao;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -40,7 +40,7 @@ public class DefaultUserInfoService implements UserInfoService {
         UserInfo userInfo = new UserInfo();
         userInfo.setEmail(account.getEmail());
         userInfo.setUserId(account.getId());
-        userInfo.setSub(AuthenticationUtils.getSubjectIdentifierForUser(new AuthenticatedUser(account.getId(), account.getEmail())));
+        userInfo.setSub(AuthorizationUtils.getSubjectIdentifierForUser(new AuthenticatedUser(account.getId(), account.getEmail())));
         return userInfo;
     }
 }

@@ -1,6 +1,6 @@
 package io.keystash.core.exceptions.authorization;
 
-import io.keystash.core.exceptions.OAuth2Exception;
+import io.keystash.common.exceptions.OAuth2Exception;
 import io.keystash.common.models.error.ErrorType;
 
 public class AuthorizationException extends OAuth2Exception {

@@ -1,5 +1,6 @@
 package io.keystash.core.services.authorization;
 
+import io.keystash.common.exceptions.TokenException;
 import io.keystash.common.models.authentication.oidc.OidcScope;
 import io.keystash.core.exceptions.authentication.AuthenticationException;
 import io.keystash.common.exceptions.jpa.JpaExecutionException;
@@ -13,14 +14,13 @@ import io.keystash.common.models.jpa.PlatformClient;
 import io.keystash.common.models.common.BasicAuthorizationDetails;
 import io.keystash.common.models.jpa.RedirectUri;
 import io.keystash.common.models.oauth.*;
-import io.keystash.core.persistence.PlatformClientDao;
-import io.keystash.core.persistence.ScopeDao;
+import io.keystash.common.persistence.PlatformClientDao;
+import io.keystash.common.persistence.ScopeDao;
 import io.keystash.core.services.authentication.AuthenticationService;
 import io.keystash.core.services.cache.Cache;
 import io.keystash.core.services.cache.CacheBuilder;
-import io.keystash.core.services.jose.TokenService;
-import io.keystash.core.util.AuthenticationUtils;
-import io.keystash.core.util.AuthorizationUtils;
+import io.keystash.common.services.jose.TokenService;
+import io.keystash.common.util.AuthorizationUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.keystash.core.exceptions.authorization.*;

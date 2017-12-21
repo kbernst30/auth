@@ -1,6 +1,6 @@
 package io.keystash.core.services;
 
-import io.keystash.core.exceptions.OAuth2Exception;
+import io.keystash.common.exceptions.OAuth2Exception;
 import io.keystash.common.models.authentication.AuthenticatedUser;
 import io.keystash.common.models.common.AuthorizationRequest;
 import io.keystash.common.models.common.BasicAuthorizationDetails;
@@ -9,11 +9,11 @@ import io.keystash.common.models.jpa.AllowedScope;
 import io.keystash.common.models.jpa.PlatformClient;
 import io.keystash.common.models.jpa.RedirectUri;
 import io.keystash.common.models.oauth.OAuth2GrantType;
-import io.keystash.core.persistence.PlatformClientDao;
-import io.keystash.core.persistence.ScopeDao;
+import io.keystash.common.persistence.PlatformClientDao;
+import io.keystash.common.persistence.ScopeDao;
 import io.keystash.core.services.authentication.AuthenticationService;
 import io.keystash.core.services.authorization.AuthorizationService;
-import io.keystash.core.services.jose.TokenService;
+import io.keystash.common.services.jose.TokenService;
 import io.keystash.core.util.AuthenticationUtils;
 import io.keystash.core.util.TestUtils;
 import io.keystash.common.models.oauth.OAuth2AuthCode;
