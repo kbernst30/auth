@@ -2,7 +2,7 @@ package io.keystash.core.resources.authentication;
 
 import io.keystash.core.exceptions.authentication.AuthenticationException;
 import io.keystash.core.exceptions.authentication.InvalidCredentialsException;
-import io.keystash.core.exceptions.authentication.UnknownAccountException;
+import io.keystash.core.exceptions.authentication.UnknownUserException;
 import io.keystash.core.exceptions.LoginException;
 import io.keystash.core.models.authentication.LoginPageConfig;
 import io.keystash.core.models.authentication.LoginRequest;
@@ -15,8 +15,10 @@ import org.glassfish.jersey.server.mvc.Viewable;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -52,30 +54,30 @@ public class LoginResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response submitLogin(@BeanParam LoginRequest loginRequest) {
+    public Response submitLogin(@BeanParam LoginRequest loginRequest, @Context UriInfo uriInfo) {
 
         Validations.validateLoginRequest(loginRequest);
 
         try {
-            authenticationService.login(loginRequest);
+            authenticationService.login(loginRequest, uriInfo.getBaseUri().getHost());
             URI returnTo = getReturnToUri(loginRequest.getReturnTo());
             if (returnTo == null) {
                 return Response.ok().build();
             }
 
             return Response.seeOther(returnTo).build();
-        } catch (UnknownAccountException e) {
-            log.error("No account was found for email [{}]", loginRequest.getUsername(), e);
-            throw new LoginException(ErrorType.Authentication.UNKNOWN_ACCOUNT, Response.Status.BAD_REQUEST,
+        } catch (UnknownUserException e) {
+            log.error("No user was found for username [{}]", loginRequest.getUsername(), e);
+            throw new LoginException(ErrorType.Authentication.UNKNOWN_USER, Response.Status.BAD_REQUEST,
                     getLoginPageConfigFromLoginRequest(loginRequest), loginRequest.getUsername());
 
         } catch (InvalidCredentialsException e) {
-            log.error("Invalid credentials given for email [{}]", loginRequest.getUsername(), e);
+            log.error("Invalid credentials given for username [{}]", loginRequest.getUsername(), e);
             throw new LoginException(ErrorType.Authentication.INVALID_CREDENTIALS, Response.Status.BAD_REQUEST,
                     getLoginPageConfigFromLoginRequest(loginRequest));
 
         } catch (AuthenticationException e) {
-            log.error("An unknown error occurred attempting authentication for email [{}]", loginRequest.getUsername(), e);
+            log.error("An unknown error occurred attempting authentication for username [{}]", loginRequest.getUsername(), e);
             throw new LoginException(ErrorType.Authentication.SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR,
                     getLoginPageConfigFromLoginRequest(loginRequest));
         }

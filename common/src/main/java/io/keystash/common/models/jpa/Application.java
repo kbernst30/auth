@@ -7,12 +7,11 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.util.Date;
 
 @ToString
 @EqualsAndHashCode
-@Entity(name = "account")
-public class Account implements Serializable {
+@Entity(name = "application")
+public class Application implements Serializable {
 
     @Id
     @Column(name = "id")
@@ -22,8 +21,7 @@ public class Account implements Serializable {
     @Column(nullable = false, unique = true, name = "name")
     @Getter @Setter private String name;
 
-    @Column(nullable = false, name = "created")
-    @Temporal(TemporalType.TIMESTAMP)
-    @Getter @Setter private Date created;
+    @Column(nullable = false, unique = true, name = "host_name")
+    @Getter @Setter private String hostName;
 
 }

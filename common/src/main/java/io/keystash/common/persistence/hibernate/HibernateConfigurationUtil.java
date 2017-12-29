@@ -62,11 +62,11 @@ public final class HibernateConfigurationUtil {
 
             MetadataSources entitySources = new MetadataSources(registry)
                     .addAnnotatedClass(Account.class)
-                    .addAnnotatedClass(AllowedScope.class)
+                    .addAnnotatedClass(ApplicationScope.class)
                     .addAnnotatedClass(AppKey.class)
                     .addAnnotatedClass(AppKeyConfig.class)
                     .addAnnotatedClass(OpenIdProviderConfig.class)
-                    .addAnnotatedClass(PlatformClient.class)
+                    .addAnnotatedClass(Client.class)
                     .addAnnotatedClass(RedirectUri.class);
 
             sessionFactory = entitySources.getMetadataBuilder().build().getSessionFactoryBuilder().build();

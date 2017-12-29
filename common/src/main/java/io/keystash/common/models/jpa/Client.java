@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 @ToString
 @EqualsAndHashCode
 @Entity(name = "platform_client")
-public class PlatformClient implements Serializable {
+public class Client implements Serializable {
 
     @Id
     @Column(name = "id")
@@ -31,11 +31,8 @@ public class PlatformClient implements Serializable {
     @Getter @Setter private String clientSecret;
 
     @ManyToOne
-    @JoinColumn(nullable = false, name = "account_id")
-    @Getter @Setter private Account account;
-
-    @Column(nullable = false, name = "authorities")
-    @Getter @Setter private String authorities;
+    @JoinColumn(nullable = false, name = "application_id")
+    @Getter @Setter private Application application;
 
     @Column(nullable = false, name = "authorized_grant_types")
     @Getter @Setter private String authorizedGrantTypesStr;
@@ -46,7 +43,7 @@ public class PlatformClient implements Serializable {
     @Column(nullable = false, name = "auto_approve")
     @Getter @Setter private boolean autoApprove;
 
-    @OneToMany(mappedBy = "platformClient", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "client", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @Getter @Setter private List<RedirectUri> redirectUris;
 
     public Set<OAuth2GrantType> getAuthorizedGrantTypes() {

@@ -8,7 +8,9 @@ import java.util.Base64;
 
 public final class TestUtils {
 
+    public static final int SAMPLE_ACCOUNT_ID = 1;
     public static final int SAMPLE_USER_ID = 1;
+    public static final int SAMPLE_APPLICATION_ID = 1;
     public static final String SAMPLE_USER_EMAIL = "test@test.com";
     public static final String SAMPLE_USER_PASSWORD = "123";
     public static final String SAMPLE_CLIENT_ID = "my-client";
@@ -23,6 +25,7 @@ public final class TestUtils {
     public static final String SAMPLE_SCOPE = "privileged";
     public static final String SAMPLE_AUTHORIZATION_URL = "http://test.com/auth/oauth/authorize";
     public static final String SAMPLE_AUTHENTICATION_URL = "http://test.com/auth/login";
+    public static final String SAMPLE_APPLICATION_HOST = "test.host.com";
 
     public static AuthorizationRequest createSampleAuthorizationRequest(String responseType) {
         return createSampleAuthorizationRequest(responseType, false);

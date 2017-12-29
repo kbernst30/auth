@@ -2,6 +2,7 @@ package io.keystash.core.services.authorization;
 
 import io.keystash.common.exceptions.TokenException;
 import io.keystash.common.models.authentication.oidc.OidcScope;
+import io.keystash.common.models.jpa.Client;
 import io.keystash.core.exceptions.authentication.AuthenticationException;
 import io.keystash.common.exceptions.jpa.JpaExecutionException;
 import io.keystash.common.models.authentication.AuthenticatedUser;
@@ -9,8 +10,7 @@ import io.keystash.common.models.authentication.oidc.OidcAuthenticationRequest;
 import io.keystash.common.models.authentication.oidc.OidcResponseType;
 import io.keystash.common.models.common.AuthorizationRequest;
 import io.keystash.common.models.common.AuthorizationResponseType;
-import io.keystash.common.models.jpa.AllowedScope;
-import io.keystash.common.models.jpa.PlatformClient;
+import io.keystash.common.models.jpa.ApplicationScope;
 import io.keystash.common.models.common.BasicAuthorizationDetails;
 import io.keystash.common.models.jpa.RedirectUri;
 import io.keystash.common.models.oauth.*;
@@ -53,7 +53,6 @@ public class AuthorizationService {
     private final RandomStringGenerator authCodeGenerator;
     private final Cache<String, OAuth2AuthCode> authCodeCache;
 
-
     @Inject
     public AuthorizationService(AuthenticationService authenticationService, PlatformClientDao platformClientDao,
                                 ScopeDao scopeDao, TokenService tokenService) {
@@ -84,7 +83,7 @@ public class AuthorizationService {
         Set<AuthorizationResponseType> responseTypes = oAuth2AuthorizationRequest.getResponseTypes();
         String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
 
-        PlatformClient client = getPlatformClientFromClientId(clientId);
+        Client client = getPlatformClientFromClientId(clientId);
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.AUTHORIZATION_CODE)) {
             throw new UnauthorizedClientException(String.format("Client [%s] is not authorized to request an " +
                     "authorization code", clientId), clientId, OAuth2GrantType.AUTHORIZATION_CODE.name().toLowerCase());
@@ -146,7 +145,7 @@ public class AuthorizationService {
         Set<AuthorizationResponseType> responseTypes = oAuth2AuthorizationRequest.getResponseTypes();
         String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
 
-        PlatformClient client = getPlatformClientFromClientId(clientId);
+        Client client = getPlatformClientFromClientId(clientId);
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.IMPLICIT)) {
             throw new UnauthorizedClientException(String.format("Client [%s] is not authorized to request a " +
                     "token using implicit grant.", clientId), clientId, OAuth2GrantType.IMPLICIT.name().toLowerCase());
@@ -182,7 +181,7 @@ public class AuthorizationService {
     public OAuth2TokenResponse getTokenResponseForAuthorizationCodeGrant(String code, BasicAuthorizationDetails authorizationDetails, String redirectUri) {
 
         String clientId = authorizationDetails.getClientId();
-        PlatformClient client = getPlatformClientFromClientId(clientId);
+        Client client = getPlatformClientFromClientId(clientId);
         verifyClientAuthorizationValidity(authorizationDetails, client);
 
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.AUTHORIZATION_CODE)) {
@@ -216,7 +215,7 @@ public class AuthorizationService {
             if (oAuth2AuthCode.getRefreshToken() != null) {
                 refreshToken = oAuth2AuthCode.getRefreshToken();
             } else {
-                refreshToken = createRefreshToken(token);
+                refreshToken = createRefreshToken(token, redirectUri);
             }
 
             if (oAuth2AuthCode.getIdToken() != null) {
@@ -233,7 +232,7 @@ public class AuthorizationService {
     public OAuth2TokenResponse getTokenResponseForClientCredentialsGrant(BasicAuthorizationDetails authorizationDetails, Set<String> requestedScopes) {
 
         String clientId = authorizationDetails.getClientId();
-        PlatformClient client = getPlatformClientFromClientId(authorizationDetails.getClientId());
+        Client client = getPlatformClientFromClientId(authorizationDetails.getClientId());
         verifyClientAuthorizationValidity(authorizationDetails, client);
 
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.CLIENT_CREDENTIALS)) {
@@ -242,18 +241,17 @@ public class AuthorizationService {
         }
 
         Set<String> resolvedScopes = getResolvedClientScope(client, requestedScopes);
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(client.getAccount().getId(), client.getAccount().getEmail());
 
-        String token = createAccessToken(client.getClientId(), authenticatedUser, resolvedScopes);
+        String token = createAccessToken(client.getClientId(), resolvedScopes);
         return createOauth2TokenResponse(token, resolvedScopes);
     }
 
     @Transactional
     public OAuth2TokenResponse getTokenResponseForPasswordGrant(BasicAuthorizationDetails authorizationDetails, String username,
-                                                                String password, Set<String> requestedScopes) {
+                                                                String password, Set<String> requestedScopes, String applicationHost) {
 
         String clientId = authorizationDetails.getClientId();
-        PlatformClient client = getPlatformClientFromClientId(clientId);
+        Client client = getPlatformClientFromClientId(clientId);
         verifyClientAuthorizationValidity(authorizationDetails, client);
 
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.PASSWORD)) {
@@ -265,7 +263,7 @@ public class AuthorizationService {
         Set<String> resolvedScopes = getResolvedClientScope(client, requestedScopes);
 
         try {
-            authenticatedUser = authenticationService.authenticateAndGetUser(username, password);
+            authenticatedUser = authenticationService.authenticateAndGetUser(username, password, applicationHost);
         } catch (AuthenticationException e) {
             throw new InvalidUserException("The provided user credentials were invalid for requested authorization", e);
         }
@@ -281,7 +279,7 @@ public class AuthorizationService {
 
     public OAuth2TokenResponse getTokenResponseForRefreshTokenGrant(BasicAuthorizationDetails authorizationDetails, String refreshToken) {
         String clientId = authorizationDetails.getClientId();
-        PlatformClient client = getPlatformClientFromClientId(clientId);
+        Client client = getPlatformClientFromClientId(clientId);
         verifyClientAuthorizationValidity(authorizationDetails, client);
 
         if (!client.getAuthorizedGrantTypes().contains(OAuth2GrantType.REFRESH_TOKEN)) {
@@ -307,10 +305,10 @@ public class AuthorizationService {
         return createOauth2TokenResponse(token, newRefreshToken, scopes);
     }
 
-    private PlatformClient getPlatformClientFromClientId(String clientId) {
+    private Client getPlatformClientFromClientId(String clientId) {
 
         try {
-            PlatformClient client = platformClientDao.getPlatformClientByClientId(clientId);
+            Client client = platformClientDao.getPlatformClientByClientId(clientId);
             if (client == null) {
                 throw new UnknownClientException(String.format("No client found for client Id [%s]", clientId), clientId);
             }
@@ -322,7 +320,7 @@ public class AuthorizationService {
         }
     }
 
-    private void verifyClientAuthorizationValidity(BasicAuthorizationDetails authorizationDetails, PlatformClient client) {
+    private void verifyClientAuthorizationValidity(BasicAuthorizationDetails authorizationDetails, Client client) {
 
         if (client.getClientSecret() != null && !client.getClientSecret().equals(authorizationDetails.getClientSecret())) {
             throw new InvalidClientException(String.format("Client [%s] is invalid or the provided secret was " +
@@ -354,27 +352,27 @@ public class AuthorizationService {
         }
     }
 
-    private Set<String> getResolvedClientScope(PlatformClient platformClient, Set<String> requestedScopes) {
-        return getResolvedClientScope(platformClient, requestedScopes, null);
+    private Set<String> getResolvedClientScope(Client client, Set<String> requestedScopes) {
+        return getResolvedClientScope(client, requestedScopes, null);
     }
 
-    private Set<String> getResolvedClientScope(PlatformClient platformClient, Set<String> requestedScopes, String redirectUri) {
+    private Set<String> getResolvedClientScope(Client client, Set<String> requestedScopes, String redirectUri) {
 
         if (requestedScopes == null || requestedScopes.size() == 0) {
-            return Stream.of(platformClient.getScope().split(",")).collect(Collectors.toSet());
+            return Stream.of(client.getScope().split(",")).collect(Collectors.toSet());
         }
 
         Set<String> allowedScopes;
         try {
             allowedScopes = scopeDao.getAllowedScopes().stream()
-                    .map(AllowedScope::getScope)
+                    .map(ApplicationScope::getScope)
                     .collect(Collectors.toSet());
         } catch (JpaExecutionException e) {
             throw new AuthorizationException("An unexpected error occurred interfacing with JPA while processing " +
                     "authorization.", redirectUri, e);
         }
 
-        String clientId = platformClient.getClientId();
+        String clientId = client.getClientId();
 
         List<String> unknownScopes = Lists.newArrayList(Sets.difference(requestedScopes, allowedScopes));
         if (unknownScopes.size() > 0) {
@@ -406,15 +404,22 @@ public class AuthorizationService {
         return authCodeStream.findFirst().orElse(null);
     }
 
+    private String createAccessToken(String clientId, Set<String> scopes) {
+        return createAccessToken(clientId, null, scopes, null);
+    }
+
     private String createAccessToken(String clientId, AuthenticatedUser authenticatedUser, Set<String> scopes) {
         return createAccessToken(clientId, authenticatedUser, scopes, null);
     }
 
     private String createAccessToken(String clientId, AuthenticatedUser authenticatedUser, Set<String> scopes, String redirectUri) {
         Map<String, String> tokenClaims = new HashMap<>();
-        tokenClaims.put("email", authenticatedUser.getEmail());
-        tokenClaims.put("account_id", String.valueOf(authenticatedUser.getUserId()));
+
         tokenClaims.put("scope", String.join(" ", scopes));
+        if (authenticatedUser != null) {
+            tokenClaims.put("email", authenticatedUser.getEmail());
+            tokenClaims.put("account_id", String.valueOf(authenticatedUser.getUserId()));
+        }
 
         try {
             return tokenService.createAccessToken(tokenClaims, TOKEN_EXPIRY_TIME_SECONDS);

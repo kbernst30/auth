@@ -50,6 +50,7 @@ public class AuthorizationResourceTest {
 
         Mockito.when(mockUriInfo.getAbsolutePath()).thenReturn(URI.create(TestUtils.SAMPLE_AUTHORIZATION_URL));
         Mockito.when(mockUriInfo.getQueryParameters()).thenReturn(SAMPLE_QUERY_PARAMETERS);
+        Mockito.when(mockUriInfo.getBaseUri()).thenReturn(URI.create(TestUtils.SAMPLE_APPLICATION_HOST));
 
         authorizationResource = new AuthorizationResource(mockAuthorizationService);
     }
@@ -296,7 +297,7 @@ public class AuthorizationResourceTest {
         Mockito.when(mockAuthorizationService.getTokenResponseForAuthorizationCodeGrant(Mockito.anyString(),
                 Mockito.any(BasicAuthorizationDetails.class), Mockito.anyString())).thenReturn(oAuth2TokenResponse);
 
-        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest);
+        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest, mockUriInfo);
         Object responseEntity = response.getEntity();
 
         Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
@@ -321,7 +322,7 @@ public class AuthorizationResourceTest {
         Mockito.when(mockAuthorizationService.getTokenResponseForClientCredentialsGrant(Mockito.any(BasicAuthorizationDetails.class),
                 Mockito.anySetOf(String.class))).thenReturn(oAuth2TokenResponse);
 
-        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest);
+        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest, mockUriInfo);
         Object responseEntity = response.getEntity();
 
         Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
@@ -346,9 +347,9 @@ public class AuthorizationResourceTest {
 
         OAuth2TokenResponse oAuth2TokenResponse = createSampleTokenResponse(true, false, true);
         Mockito.when(mockAuthorizationService.getTokenResponseForPasswordGrant(Mockito.any(BasicAuthorizationDetails.class),
-                Mockito.anyString(), Mockito.anyString(), Mockito.anySetOf(String.class))).thenReturn(oAuth2TokenResponse);
+                Mockito.anyString(), Mockito.anyString(), Mockito.anySetOf(String.class), Mockito.anyString())).thenReturn(oAuth2TokenResponse);
 
-        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest);
+        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest, mockUriInfo);
         Object responseEntity = response.getEntity();
 
         Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
@@ -375,7 +376,7 @@ public class AuthorizationResourceTest {
         Mockito.when(mockAuthorizationService.getTokenResponseForRefreshTokenGrant(Mockito.any(BasicAuthorizationDetails.class),
                 Mockito.anyString())).thenReturn(oAuth2TokenResponse);
 
-        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest);
+        Response response = authorizationResource.getOAuth2Token(TestUtils.createSampleBasicAuthHeader(), oAuth2TokenRequest, mockUriInfo);
         Object responseEntity = response.getEntity();
 
         Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());

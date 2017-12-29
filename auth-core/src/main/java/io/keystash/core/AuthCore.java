@@ -11,7 +11,7 @@ import io.keystash.common.factories.jose.JwsAlgorithmFactory;
 import io.keystash.common.factories.jose.KeyProviderFactory;
 import io.keystash.core.filters.AuthenticationFilter;
 import io.keystash.common.models.authentication.AuthenticatedUser;
-import io.keystash.common.models.jpa.AllowedScope;
+import io.keystash.common.models.jpa.ApplicationScope;
 import io.keystash.common.models.web.HostInfo;
 import io.keystash.core.persistence.*;
 import io.keystash.common.persistence.hibernate.HibernateDao;
@@ -72,8 +72,8 @@ public class AuthCore extends ResourceConfig {
                 // Data Layer - TODO use different JPA or perhaps none at all based on config
                 bind(HibernateSessionProvider.class).to(HibernateSessionProvider.class).in(Singleton.class);
                 bind(HibernateDao.class).to(JpaEntityDao.class).in(Singleton.class);
-                bind(AccountDao.class).to(AccountDao.class).in(Singleton.class);
-                bind(AllowedScope.class).to(AllowedScope.class).in(Singleton.class);
+                bind(UserDao.class).to(UserDao.class).in(Singleton.class);
+                bind(ApplicationScope.class).to(ApplicationScope.class).in(Singleton.class);
                 bind(AppKeyDao.class).to(AppKeyDao.class).in(Singleton.class);
                 bind(OpenIdProviderConfigDao.class).to(OpenIdProviderConfigDao.class).to(Singleton.class);
                 bind(PlatformClientDao.class).to(PlatformClientDao.class).in(Singleton.class);

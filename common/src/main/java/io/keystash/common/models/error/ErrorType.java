@@ -14,7 +14,7 @@ public final class ErrorType {
         MISSING_CREDENTIALS("missing_credentials", "You must specify email and password."),
         INVALID_CREDENTIALS("invalid_credentials", "Username or password was incorrect. Please double check your credentials."),
         SERVER_ERROR("server_error", "An unknown error occurred"),
-        UNKNOWN_ACCOUNT("unknown_account", "No user was found for email %s.");
+        UNKNOWN_USER("unknown_user", "No user was found for username %s.");
 
         @Getter private final String error;
         @Getter private final String message;

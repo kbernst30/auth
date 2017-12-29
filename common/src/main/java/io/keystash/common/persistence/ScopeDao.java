@@ -1,8 +1,7 @@
 package io.keystash.common.persistence;
 
 import io.keystash.common.exceptions.jpa.JpaExecutionException;
-import io.keystash.common.models.jpa.AllowedScope;
-import io.keystash.common.persistence.JpaEntityDao;
+import io.keystash.common.models.jpa.ApplicationScope;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -18,7 +17,7 @@ public class ScopeDao {
         this.jpaEntityDao = jpaEntityDao;
     }
 
-    public List<AllowedScope> getAllowedScopes() throws JpaExecutionException {
-        return jpaEntityDao.getEntities(AllowedScope.class);
+    public List<ApplicationScope> getAllowedScopes() throws JpaExecutionException {
+        return jpaEntityDao.getEntities(ApplicationScope.class);
     }
 }

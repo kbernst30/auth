@@ -19,7 +19,7 @@ public class RedirectUri implements Serializable {
     @Id
     @ManyToOne
     @JoinColumn(nullable = false, name = "platform_client_id")
-    @Getter @Setter private PlatformClient platformClient;
+    @Getter @Setter private Client client;
 
     @Id
     @Getter @Setter private String value;

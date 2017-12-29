@@ -4,10 +4,7 @@ import io.keystash.common.exceptions.OAuth2Exception;
 import io.keystash.common.models.authentication.AuthenticatedUser;
 import io.keystash.common.models.common.AuthorizationRequest;
 import io.keystash.common.models.common.BasicAuthorizationDetails;
-import io.keystash.common.models.jpa.Account;
-import io.keystash.common.models.jpa.AllowedScope;
-import io.keystash.common.models.jpa.PlatformClient;
-import io.keystash.common.models.jpa.RedirectUri;
+import io.keystash.common.models.jpa.*;
 import io.keystash.common.models.oauth.OAuth2GrantType;
 import io.keystash.common.persistence.PlatformClientDao;
 import io.keystash.common.persistence.ScopeDao;
@@ -33,9 +30,12 @@ import java.util.stream.Stream;
 public class AuthorizationServiceTest {
 
     private static final Account SAMPLE_ACCOUNT = new Account();
+    private static final User SAMPLE_USER = new User();
+    private static final Application SAMPLE_APPLICATION = new Application();
+
     private static final AuthenticatedUser SAMPLE_AUTHENTICATED_USER = new AuthenticatedUser(TestUtils.SAMPLE_USER_ID,
             TestUtils.SAMPLE_USER_EMAIL);
-    private static final PlatformClient SAMPLE_PLATFORM_CLIENT = new PlatformClient();
+    private static final Client SAMPLE_PLATFORM_CLIENT = new Client();
     private static final BasicAuthorizationDetails SAMPlE_BASIC_AUTH_DETAILS = BasicAuthorizationDetails.fromHeaderString(TestUtils.createSampleBasicAuthHeader());
 
     private static AuthenticationService mockAuthenticationService;
@@ -52,22 +52,25 @@ public class AuthorizationServiceTest {
         mockScopeDao = Mockito.mock(ScopeDao.class);
         mockTokenService = Mockito.mock(TokenService.class);
 
-        SAMPLE_ACCOUNT.setId(TestUtils.SAMPLE_USER_ID);
-        SAMPLE_ACCOUNT.setVerified(true);
-        SAMPLE_ACCOUNT.setEmail(TestUtils.SAMPLE_USER_EMAIL);
-        SAMPLE_ACCOUNT.setPassword(AuthenticationUtils.getHashedPassword(TestUtils.SAMPLE_USER_PASSWORD));
+        SAMPLE_ACCOUNT.setId(TestUtils.SAMPLE_ACCOUNT_ID);
+
+        SAMPLE_USER.setVerified(true);
+        SAMPLE_USER.setUsername(TestUtils.SAMPLE_USER_EMAIL);
+        SAMPLE_USER.setPassword(AuthenticationUtils.getHashedPassword(TestUtils.SAMPLE_USER_PASSWORD));
+
+        SAMPLE_APPLICATION.setId(TestUtils.SAMPLE_APPLICATION_ID);
 
         SAMPLE_PLATFORM_CLIENT.setClientId(TestUtils.SAMPLE_CLIENT_ID);
         SAMPLE_PLATFORM_CLIENT.setClientSecret(TestUtils.SAMPLE_CLIENT_SECRET);
         SAMPLE_PLATFORM_CLIENT.setAutoApprove(true);
-        SAMPLE_PLATFORM_CLIENT.setAccount(SAMPLE_ACCOUNT);
+        SAMPLE_PLATFORM_CLIENT.setApplication(SAMPLE_APPLICATION);
 
         Mockito.when(mockPlatformClientDao.getPlatformClientByClientId(TestUtils.SAMPLE_CLIENT_ID)).thenReturn(SAMPLE_PLATFORM_CLIENT);
         Mockito.when(mockScopeDao.getAllowedScopes()).thenReturn(
                 Stream.of("openid").map(scope -> {
-                    AllowedScope allowedScope = new AllowedScope();
-                    allowedScope.setScope(scope);
-                    return allowedScope;
+                    ApplicationScope applicationScope = new ApplicationScope();
+                    applicationScope.setScope(scope);
+                    return applicationScope;
                 }).collect(Collectors.toList())
         );
 
@@ -88,7 +91,8 @@ public class AuthorizationServiceTest {
         SAMPLE_PLATFORM_CLIENT.setScope(TestUtils.SAMPLE_SCOPE);
         SAMPLE_PLATFORM_CLIENT.setRedirectUris(getListOfSingleRedirectUri(TestUtils.SAMPLE_VALID_REDIRECT_URI));
 
-        Mockito.when(mockAuthenticationService.authenticateAndGetUser(Mockito.anyString(), Mockito.anyString())).thenReturn(SAMPLE_AUTHENTICATED_USER);
+        Mockito.when(mockAuthenticationService.authenticateAndGetUser(Mockito.anyString(), Mockito.anyString(),
+                Mockito.eq(TestUtils.SAMPLE_APPLICATION_HOST))).thenReturn(SAMPLE_AUTHENTICATED_USER);
 
         // We want a new instance before every test to ensure clean cache
         authorizationService = new AuthorizationService(mockAuthenticationService, mockPlatformClientDao, mockScopeDao, mockTokenService);
@@ -360,13 +364,13 @@ public class AuthorizationServiceTest {
                 .collect(Collectors.toSet()));
 
         authorizationService.getTokenResponseForPasswordGrant(SAMPlE_BASIC_AUTH_DETAILS, TestUtils.SAMPLE_USER_EMAIL,
-                TestUtils.SAMPLE_USER_PASSWORD, new HashSet<>());
+                TestUtils.SAMPLE_USER_PASSWORD, new HashSet<>(), TestUtils.SAMPLE_APPLICATION_HOST);
     }
 
     @Test
     public void getTokenResponseForPasswordGrant_isSuccessful() {
         OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForPasswordGrant(SAMPlE_BASIC_AUTH_DETAILS,
-                TestUtils.SAMPLE_USER_EMAIL, TestUtils.SAMPLE_USER_PASSWORD, new HashSet<>());
+                TestUtils.SAMPLE_USER_EMAIL, TestUtils.SAMPLE_USER_PASSWORD, new HashSet<>(), TestUtils.SAMPLE_APPLICATION_HOST);
 
         Assert.assertNotNull(oAuth2TokenResponse.getAccessToken());
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getAccessToken()));
@@ -415,7 +419,7 @@ public class AuthorizationServiceTest {
         return Stream.of(redirectUriStr)
                 .map(uri -> {
                     RedirectUri redirectUri = new RedirectUri();
-                    redirectUri.setPlatformClient(SAMPLE_PLATFORM_CLIENT);
+                    redirectUri.setClient(SAMPLE_PLATFORM_CLIENT);
                     redirectUri.setValue(uri);
                     return redirectUri;
                 })

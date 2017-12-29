@@ -101,7 +101,7 @@ public class AuthorizationResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOAuth2Token(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
-                                   @BeanParam OAuth2TokenRequest oAuth2TokenRequest) {
+                                   @BeanParam OAuth2TokenRequest oAuth2TokenRequest, @Context UriInfo uriInfo) {
 
         BasicAuthorizationDetails authorizationDetails = BasicAuthorizationDetails.fromHeaderString(authorizationHeader);
         Validations.validateOAuth2TokenRequest(oAuth2TokenRequest, authorizationDetails);
@@ -118,7 +118,7 @@ public class AuthorizationResource {
 
         } else if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.PASSWORD) {
             tokenResponse = authorizationService.getTokenResponseForPasswordGrant(authorizationDetails,
-                    oAuth2TokenRequest.getUsername(), oAuth2TokenRequest.getPassword(), requestedScopes);
+                    oAuth2TokenRequest.getUsername(), oAuth2TokenRequest.getPassword(), requestedScopes, uriInfo.getBaseUri().getHost());
 
         } else if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.REFRESH_TOKEN) {
             tokenResponse = authorizationService.getTokenResponseForRefreshTokenGrant(authorizationDetails, oAuth2TokenRequest.getRefreshToken());
