@@ -13,6 +13,7 @@ import java.util.List;
 @ToString
 @EqualsAndHashCode
 @Entity(name = "app_key")
+@Table(name = "app_key")
 public class AppKey implements Serializable {
 
     @Id

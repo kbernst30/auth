@@ -110,7 +110,7 @@ public class JwtTokenService implements TokenService {
             jwtCreator.withClaim("nonce", nonce);
         }
 
-        jwtCreator.withClaim("email", authenticatedUser.getEmail());
+        jwtCreator.withClaim("username", authenticatedUser.getUsername());
         jwtCreator.withClaim("user_id", authenticatedUser.getUserId());
 
         try {

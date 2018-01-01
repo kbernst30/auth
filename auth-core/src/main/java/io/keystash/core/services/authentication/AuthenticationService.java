@@ -55,7 +55,7 @@ public class AuthenticationService {
             throw new InvalidCredentialsException(String.format("Password was invalid for user with username %s", username));
         }
 
-        return new AuthenticatedUser(user.getId(), user.getUsername());
+        return new AuthenticatedUser(user.getId(), user.getUsername(), application.getId());
     }
 
     private Application getApplicationForAuthentication(String loginHost) throws AuthenticationException {
@@ -75,7 +75,7 @@ public class AuthenticationService {
 
     private User getApplicationUserForUsername(String username, Application application) throws AuthenticationException {
         try {
-            User user = userDao.getApplicationUserByUsername(application.getId(), username);
+            User user = userDao.getApplicationUserByUsername(application, username);
             if (user == null) {
                 throw new UnknownUserException(String.format("No user exists for username %s", username));
             }

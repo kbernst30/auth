@@ -11,6 +11,7 @@ import java.io.Serializable;
 @ToString
 @EqualsAndHashCode
 @Entity(name = "open_id_provider_config")
+@Table(name = "open_id_provider_config")
 public class OpenIdProviderConfig implements Serializable {
 
     @Id

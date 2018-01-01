@@ -5,6 +5,11 @@ import lombok.Setter;
 import lombok.ToString;
 
 import javax.ws.rs.FormParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A request object for an OAuth2.0 token request
@@ -38,14 +43,14 @@ public class OAuth2TokenRequest {
     @Getter @Setter private String code;
 
     /**
-     * The email belonging to the resource owner
+     * The username belonging to the resource owner
      * <p>This will be ignored if grantType is not equal to {@code OAuth2GrantType.PASSWORD}</p>
      */
-    @FormParam("email")
+    @FormParam("username")
     @Getter @Setter private String username;
 
     /**
-     * The password associated with the email belonging to the resource owner
+     * The password associated with the username belonging to the resource owner
      * <p>This will be ignored if grantType is not equal to {@code OAuth2GrantType.PASSWORD}</p>
      */
     @FormParam("password")
@@ -57,5 +62,43 @@ public class OAuth2TokenRequest {
      */
     @FormParam("refresh_token")
     @Getter @Setter private String refreshToken;
+
+    /**
+     * URI Info for the request
+     */
+    @Context
+    @Setter private UriInfo uriInfo;
+
+    /**
+     * Gets the base URI of the request
+     * @return a URI object representing the base URI
+     */
+    public URI getRequestBaseUri() {
+        return uriInfo.getBaseUri();
+    }
+
+    /**
+     * Gets the absolute URI of the request
+     * @return a URI object representing the absolute URI
+     */
+    public URI getRequestAbsoluteUri() {
+        return uriInfo.getAbsolutePath();
+    }
+
+    /**
+     * Gets the host name of the request
+     * @return a string representing a valid URI host
+     */
+    public String getRequestHost() {
+        return getRequestBaseUri().getHost();
+    }
+
+    /**
+     * Gets the raw query parameters of the request
+     * @return a map of string lists representing query parameters
+     */
+    public Map<String, List<String>> getRequestParameters() {
+        return uriInfo.getQueryParameters();
+    }
 
 }

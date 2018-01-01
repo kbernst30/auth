@@ -10,6 +10,7 @@ import java.io.Serializable;
 public class AuthenticatedUser implements Serializable {
 
     @Getter @Setter private int userId;
-    @Getter @Setter private String email;
+    @Getter @Setter private String username;
+    @Getter @Setter private int applicationId;
 
 }

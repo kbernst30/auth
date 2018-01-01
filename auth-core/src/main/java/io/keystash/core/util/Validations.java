@@ -170,7 +170,7 @@ public final class Validations {
 
     private static void validatePasswordGrant(OAuth2TokenRequest oAuth2TokenRequest) {
         if (StringUtils.isEmpty(oAuth2TokenRequest.getUsername())) {
-            throw new OAuth2Exception(ErrorType.OAuth2.INVALID_PARAMETER, Response.Status.BAD_REQUEST, "email");
+            throw new OAuth2Exception(ErrorType.OAuth2.INVALID_PARAMETER, Response.Status.BAD_REQUEST, "username");
         }
 
         if (StringUtils.isEmpty(oAuth2TokenRequest.getPassword())) {

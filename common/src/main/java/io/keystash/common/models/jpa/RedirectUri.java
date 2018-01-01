@@ -5,20 +5,18 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 import java.io.Serializable;
 
 @ToString
 @EqualsAndHashCode
 @Entity(name = "redirect_uri")
+@Table(name = "redirect_uri")
 public class RedirectUri implements Serializable {
 
     @Id
     @ManyToOne
-    @JoinColumn(nullable = false, name = "platform_client_id")
+    @JoinColumn(nullable = false, name = "client_id")
     @Getter @Setter private Client client;
 
     @Id

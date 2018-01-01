@@ -3,7 +3,12 @@ package io.keystash.core.util;
 import io.keystash.common.models.authentication.oidc.OidcAuthenticationRequest;
 import io.keystash.common.models.common.AuthorizationRequest;
 import io.keystash.common.models.oauth.OAuth2AuthorizationRequest;
+import io.keystash.common.models.oauth.OAuth2GrantType;
+import io.keystash.common.models.oauth.OAuth2TokenRequest;
 
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriInfo;
 import java.util.Base64;
 
 public final class TestUtils {
@@ -25,13 +30,14 @@ public final class TestUtils {
     public static final String SAMPLE_SCOPE = "privileged";
     public static final String SAMPLE_AUTHORIZATION_URL = "http://test.com/auth/oauth/authorize";
     public static final String SAMPLE_AUTHENTICATION_URL = "http://test.com/auth/login";
-    public static final String SAMPLE_APPLICATION_HOST = "test.host.com";
+    public static final String SAMPLE_APPLICATION_URL = "http://test.com";
+    public static final MultivaluedMap<String, String> SAMPLE_QUERY_PARAMETERS = new MultivaluedHashMap<>();
 
-    public static AuthorizationRequest createSampleAuthorizationRequest(String responseType) {
-        return createSampleAuthorizationRequest(responseType, false);
+    public static AuthorizationRequest createSampleAuthorizationRequest(String responseType, UriInfo uriInfo) {
+        return createSampleAuthorizationRequest(responseType, uriInfo, false);
     }
 
-    public static AuthorizationRequest createSampleAuthorizationRequest(String responseType, boolean isOpenId) {
+    public static AuthorizationRequest createSampleAuthorizationRequest(String responseType, UriInfo uriInfo, boolean isOpenId) {
         AuthorizationRequest authorizationRequest = new AuthorizationRequest();
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = new OAuth2AuthorizationRequest();
         OidcAuthenticationRequest oidcAuthenticationRequest = new OidcAuthenticationRequest();
@@ -45,10 +51,18 @@ public final class TestUtils {
             oAuth2AuthorizationRequest.setScope("openid");
         }
 
+        authorizationRequest.setUriInfo(uriInfo);
         authorizationRequest.setOAuth2AuthorizationRequest(oAuth2AuthorizationRequest);
         authorizationRequest.setOidcAuthenticationRequest(oidcAuthenticationRequest);
 
         return authorizationRequest;
+    }
+
+    public static OAuth2TokenRequest createSampleTokenRequest(OAuth2GrantType oAuth2GrantType, UriInfo uriInfo) {
+        OAuth2TokenRequest oAuth2TokenRequest = new OAuth2TokenRequest();
+        oAuth2TokenRequest.setGrantType(oAuth2GrantType);
+        oAuth2TokenRequest.setUriInfo(uriInfo);
+        return oAuth2TokenRequest;
     }
 
     public static String createSampleBasicAuthHeader() {

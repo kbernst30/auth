@@ -2,6 +2,7 @@ package io.keystash.common.persistence;
 
 import io.keystash.common.exceptions.jpa.JpaExecutionException;
 import io.keystash.common.models.jpa.Account;
+import io.keystash.common.models.jpa.Application;
 import io.keystash.common.models.jpa.User;
 
 import javax.inject.Inject;
@@ -23,7 +24,7 @@ public class UserDao {
         return jpaEntityDao.getEntityById(User.class, id);
     }
 
-    public User getApplicationUserByUsername(int applicationId, String username) throws JpaExecutionException {
+    public User getApplicationUserByUsername(Application application, String username) throws JpaExecutionException {
         return jpaEntityDao.doWork(session -> {
             CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
             CriteriaQuery<User> query = criteriaBuilder.createQuery(User.class);
@@ -32,7 +33,7 @@ public class UserDao {
             query.select(userRoot)
                     .where(criteriaBuilder.and(
                             criteriaBuilder.equal(userRoot.get("username"), username),
-                            criteriaBuilder.equal(userRoot.get("application.id"), applicationId)));
+                            criteriaBuilder.equal(userRoot.get("application"), application)));
 
             List<User> userList = session.createQuery(query).getResultList();
             return userList.size() > 0 ? userList.get(0) : null;

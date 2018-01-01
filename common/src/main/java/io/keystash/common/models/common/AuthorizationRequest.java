@@ -8,6 +8,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.ws.rs.BeanParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -30,6 +35,12 @@ public class AuthorizationRequest {
     @Getter @Setter private OidcAuthenticationRequest oidcAuthenticationRequest;
 
     /**
+     * URI Info for the request
+     */
+    @Context
+    @Setter private UriInfo uriInfo;
+
+    /**
      * Indicates if this request includes an OpenID Connect Authentication request
      * @return true if is an OpenID Connect request, false otherwise
      */
@@ -40,6 +51,38 @@ public class AuthorizationRequest {
         }
 
         return false;
+    }
+
+    /**
+     * Gets the base URI of the request
+     * @return a URI object representing the base URI
+     */
+    public URI getRequestBaseUri() {
+        return uriInfo.getBaseUri();
+    }
+
+    /**
+     * Gets the absolute URI of the request
+     * @return a URI object representing the absolute URI
+     */
+    public URI getRequestAbsoluteUri() {
+        return uriInfo.getAbsolutePath();
+    }
+
+    /**
+     * Gets the host name of the request
+     * @return a string representing a valid URI host
+     */
+    public String getRequestHost() {
+        return getRequestBaseUri().getHost();
+    }
+
+    /**
+     * Gets the raw query parameters of the request
+     * @return a map of string lists representing query parameters
+     */
+    public Map<String, List<String>> getRequestParameters() {
+        return uriInfo.getQueryParameters();
     }
 
 }

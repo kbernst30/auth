@@ -40,10 +40,11 @@ public final class HibernateConfigurationUtil {
 
             Map<String, Object> jpaSettings = new HashMap<>();
             jpaSettings.put(Environment.DRIVER, jpaConfiguration.driver());
-            jpaSettings.put(Environment.URL, jpaConfiguration.connnectionUrl());
+            jpaSettings.put(Environment.URL, jpaConfiguration.connectionUrl());
             jpaSettings.put(Environment.USER, jpaConfiguration.username());
             jpaSettings.put(Environment.PASS, jpaConfiguration.password());
-            jpaSettings.put(Environment.DIALECT, "org.hibernate.dialect.H2Dialect"); // TODO This should be configured
+//            jpaSettings.put(Environment.DIALECT, "org.hibernate.dialect.H2Dialect"); // TODO This should be configured
+            jpaSettings.put(Environment.DIALECT, "org.hibernate.dialect.MySQL5Dialect");
             jpaSettings.put(Environment.SHOW_SQL, false);
 
             // TODO add configurations for this
@@ -65,9 +66,11 @@ public final class HibernateConfigurationUtil {
                     .addAnnotatedClass(ApplicationScope.class)
                     .addAnnotatedClass(AppKey.class)
                     .addAnnotatedClass(AppKeyConfig.class)
-                    .addAnnotatedClass(OpenIdProviderConfig.class)
+                    .addAnnotatedClass(Application.class)
                     .addAnnotatedClass(Client.class)
-                    .addAnnotatedClass(RedirectUri.class);
+                    .addAnnotatedClass(OpenIdProviderConfig.class)
+                    .addAnnotatedClass(RedirectUri.class)
+                    .addAnnotatedClass(User.class);
 
             sessionFactory = entitySources.getMetadataBuilder().build().getSessionFactoryBuilder().build();
         }

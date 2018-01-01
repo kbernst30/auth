@@ -66,7 +66,7 @@ public class OidcAuthenticationRequest {
     @Getter @Setter private String idTokenHint;
 
     /**
-     * Hint about the login identified (i.e. email address) the End-User uses to log in
+     * Hint about the login identified (i.e. username address) the End-User uses to log in
      */
     @QueryParam("login_hint")
     @Getter @Setter private String loginHint;

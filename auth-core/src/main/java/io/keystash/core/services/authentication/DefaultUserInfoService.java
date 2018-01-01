@@ -37,10 +37,12 @@ public class DefaultUserInfoService implements UserInfoService {
             throw new UnknownUserInfoException(String.format("No user was found for userId [%d]", userId));
         }
 
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(user.getId(), user.getUsername(), user.getApplication().getId());
+
         UserInfo userInfo = new UserInfo();
         userInfo.setPreferredUsername(user.getUsername());
         userInfo.setUserId(user.getId());
-        userInfo.setSub(AuthorizationUtils.getSubjectIdentifierForUser(new AuthenticatedUser(user.getId(), user.getUsername())));
+        userInfo.setSub(AuthorizationUtils.getSubjectIdentifierForUser(authenticatedUser));
         return userInfo;
     }
 }

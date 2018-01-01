@@ -11,7 +11,7 @@ public final class ErrorType {
     @AllArgsConstructor
     public enum Authentication implements AbstractError {
 
-        MISSING_CREDENTIALS("missing_credentials", "You must specify email and password."),
+        MISSING_CREDENTIALS("missing_credentials", "You must specify username and password."),
         INVALID_CREDENTIALS("invalid_credentials", "Username or password was incorrect. Please double check your credentials."),
         SERVER_ERROR("server_error", "An unknown error occurred"),
         UNKNOWN_USER("unknown_user", "No user was found for username %s.");

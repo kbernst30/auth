@@ -10,7 +10,7 @@ import io.keystash.common.factories.jose.JwsAlgorithmFactory;
 import io.keystash.common.factories.jose.KeyProviderFactory;
 import io.keystash.common.persistence.AppKeyDao;
 import io.keystash.common.persistence.JpaEntityDao;
-import io.keystash.common.persistence.PlatformClientDao;
+import io.keystash.common.persistence.ClientDao;
 import io.keystash.common.persistence.ScopeDao;
 import io.keystash.common.persistence.hibernate.HibernateDao;
 import io.keystash.common.persistence.hibernate.HibernateSessionProvider;
@@ -52,7 +52,7 @@ public class AdminConsole extends ResourceConfig {
                 bind(HibernateSessionProvider.class).to(HibernateSessionProvider.class).in(Singleton.class);
                 bind(HibernateDao.class).to(JpaEntityDao.class).in(Singleton.class);
                 bind(AppKeyDao.class).to(AppKeyDao.class).in(Singleton.class);
-                bind(PlatformClientDao.class).to(PlatformClientDao.class).in(Singleton.class);
+                bind(ClientDao.class).to(ClientDao.class).in(Singleton.class);
                 bind(ScopeDao.class).to(ScopeDao.class).in(Singleton.class);
 
                 // Factories

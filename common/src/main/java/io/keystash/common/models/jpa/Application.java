@@ -24,4 +24,8 @@ public class Application implements Serializable {
     @Column(nullable = false, unique = true, name = "host_name")
     @Getter @Setter private String hostName;
 
+    @ManyToOne
+    @JoinColumn(nullable = false, name = "account_id")
+    @Getter @Setter private Account account;
+
 }

@@ -15,7 +15,7 @@ import javax.ws.rs.FormParam;
 public class LoginRequest {
 
     /**
-     * The unique identifying email of the user attempting authentication
+     * The unique identifying username of the user attempting authentication
      */
     @FormParam("username")
     @Getter @Setter private String username;

@@ -1,6 +1,7 @@
 package io.keystash.common.persistence;
 
 import io.keystash.common.exceptions.jpa.JpaExecutionException;
+import io.keystash.common.models.jpa.Application;
 import io.keystash.common.models.jpa.Client;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,24 +12,27 @@ import javax.persistence.criteria.Root;
 import java.util.List;
 
 @Slf4j
-public class PlatformClientDao {
+public class ClientDao {
 
     private final JpaEntityDao jpaEntityDao;
 
     @Inject
-    public PlatformClientDao(JpaEntityDao jpaEntityDao) {
+    public ClientDao(JpaEntityDao jpaEntityDao) {
         this.jpaEntityDao = jpaEntityDao;
     }
 
-    public Client getPlatformClientByClientId(String clientId) throws JpaExecutionException {
+    public Client getApplicationClientByClientId(Application application, String clientId) throws JpaExecutionException {
         return jpaEntityDao.doWork(session -> {
             CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
             CriteriaQuery<Client> query = criteriaBuilder.createQuery(Client.class);
-            Root<Client> platformClientRoot = query.from(Client.class);
+            Root<Client> clientRoot = query.from(Client.class);
 
-            query.select(platformClientRoot).where(criteriaBuilder.equal(platformClientRoot.get("clientId"), clientId));
+            query.select(clientRoot)
+                    .where(criteriaBuilder.and(
+                            criteriaBuilder.equal(clientRoot.get("clientId"), clientId)),
+                            criteriaBuilder.equal(clientRoot.get("application"), application));
+
             List<Client> clientList = session.createQuery(query).getResultList();
-
             return clientList.size() > 0 ? clientList.get(0) : null;
         });
     }

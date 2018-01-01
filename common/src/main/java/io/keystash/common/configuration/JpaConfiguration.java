@@ -17,7 +17,7 @@ public interface JpaConfiguration extends Configuration {
      * Gets the connection URL provided in the configuration file
      * @return the connection URL string
      */
-    String connnectionUrl();
+    String connectionUrl();
 
     /**
      * Gets the username credential provided in the configuration file

@@ -39,7 +39,7 @@ public class AuthorizationUtils {
             throw new RuntimeException("Unable to generate subject identifier for user", e);
         }
 
-        String salt = authenticatedUser.getEmail() + ":" + authenticatedUser.getUserId(); // TODO more secure/random salt
+        String salt = authenticatedUser.getUsername() + ":" + authenticatedUser.getUserId(); // TODO more secure/random salt
         byte[] hash = sha256.digest(salt.getBytes());
         return UUID.nameUUIDFromBytes(hash).toString();
     }

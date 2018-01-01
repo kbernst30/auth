@@ -16,7 +16,8 @@ import java.util.stream.Stream;
 
 @ToString
 @EqualsAndHashCode
-@Entity(name = "platform_client")
+@Entity(name = "client")
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"application_id", "client_id"}), name = "client")
 public class Client implements Serializable {
 
     @Id
@@ -24,7 +25,7 @@ public class Client implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Getter @Setter private int id;
 
-    @Column(nullable = false, unique = true, name = "client_id")
+    @Column(nullable = false, name = "client_id")
     @Getter @Setter private String clientId;
 
     @Column(nullable = false, name = "client_secret")

@@ -12,7 +12,7 @@ import java.util.Date;
 @ToString
 @EqualsAndHashCode
 @Entity(name = "user")
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"application_id, username"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"application_id", "username"}), name = "user")
 public class User implements Serializable {
 
     @Id

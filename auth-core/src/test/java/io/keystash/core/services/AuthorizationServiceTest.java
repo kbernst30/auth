@@ -6,7 +6,9 @@ import io.keystash.common.models.common.AuthorizationRequest;
 import io.keystash.common.models.common.BasicAuthorizationDetails;
 import io.keystash.common.models.jpa.*;
 import io.keystash.common.models.oauth.OAuth2GrantType;
-import io.keystash.common.persistence.PlatformClientDao;
+import io.keystash.common.models.oauth.OAuth2TokenRequest;
+import io.keystash.common.persistence.ApplicationDao;
+import io.keystash.common.persistence.ClientDao;
 import io.keystash.common.persistence.ScopeDao;
 import io.keystash.core.services.authentication.AuthenticationService;
 import io.keystash.core.services.authorization.AuthorizationService;
@@ -22,7 +24,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.HashSet;
+import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,23 +37,27 @@ public class AuthorizationServiceTest {
     private static final Application SAMPLE_APPLICATION = new Application();
 
     private static final AuthenticatedUser SAMPLE_AUTHENTICATED_USER = new AuthenticatedUser(TestUtils.SAMPLE_USER_ID,
-            TestUtils.SAMPLE_USER_EMAIL);
+            TestUtils.SAMPLE_USER_EMAIL, TestUtils.SAMPLE_APPLICATION_ID);
     private static final Client SAMPLE_PLATFORM_CLIENT = new Client();
     private static final BasicAuthorizationDetails SAMPlE_BASIC_AUTH_DETAILS = BasicAuthorizationDetails.fromHeaderString(TestUtils.createSampleBasicAuthHeader());
 
     private static AuthenticationService mockAuthenticationService;
-    private static PlatformClientDao mockPlatformClientDao;
+    private static ApplicationDao mockApplicationDao;
+    private static ClientDao mockClientDao;
     private static ScopeDao mockScopeDao;
     private static TokenService mockTokenService;
+    private static UriInfo mockUriInfo;
 
     private static AuthorizationService authorizationService;
 
     @BeforeClass
     public static void setupTests() throws Exception {
         mockAuthenticationService = Mockito.mock(AuthenticationService.class);
-        mockPlatformClientDao = Mockito.mock(PlatformClientDao.class);
+        mockApplicationDao = Mockito.mock(ApplicationDao.class);
+        mockClientDao = Mockito.mock(ClientDao.class);
         mockScopeDao = Mockito.mock(ScopeDao.class);
         mockTokenService = Mockito.mock(TokenService.class);
+        mockUriInfo = Mockito.mock(UriInfo.class);
 
         SAMPLE_ACCOUNT.setId(TestUtils.SAMPLE_ACCOUNT_ID);
 
@@ -65,7 +72,13 @@ public class AuthorizationServiceTest {
         SAMPLE_PLATFORM_CLIENT.setAutoApprove(true);
         SAMPLE_PLATFORM_CLIENT.setApplication(SAMPLE_APPLICATION);
 
-        Mockito.when(mockPlatformClientDao.getPlatformClientByClientId(TestUtils.SAMPLE_CLIENT_ID)).thenReturn(SAMPLE_PLATFORM_CLIENT);
+        Mockito.when(mockUriInfo.getAbsolutePath()).thenReturn(URI.create(TestUtils.SAMPLE_AUTHORIZATION_URL));
+        Mockito.when(mockUriInfo.getQueryParameters()).thenReturn(TestUtils.SAMPLE_QUERY_PARAMETERS);
+        Mockito.when(mockUriInfo.getBaseUri()).thenReturn(URI.create(TestUtils.SAMPLE_APPLICATION_URL));
+
+        Mockito.when(mockApplicationDao.getApplicationForHostName(Mockito.anyString())).thenReturn(SAMPLE_APPLICATION);
+        Mockito.when(mockClientDao.getApplicationClientByClientId(SAMPLE_APPLICATION, TestUtils.SAMPLE_CLIENT_ID))
+                .thenReturn(SAMPLE_PLATFORM_CLIENT);
         Mockito.when(mockScopeDao.getAllowedScopes()).thenReturn(
                 Stream.of("openid").map(scope -> {
                     ApplicationScope applicationScope = new ApplicationScope();
@@ -92,10 +105,11 @@ public class AuthorizationServiceTest {
         SAMPLE_PLATFORM_CLIENT.setRedirectUris(getListOfSingleRedirectUri(TestUtils.SAMPLE_VALID_REDIRECT_URI));
 
         Mockito.when(mockAuthenticationService.authenticateAndGetUser(Mockito.anyString(), Mockito.anyString(),
-                Mockito.eq(TestUtils.SAMPLE_APPLICATION_HOST))).thenReturn(SAMPLE_AUTHENTICATED_USER);
+                Mockito.eq(TestUtils.SAMPLE_APPLICATION_URL))).thenReturn(SAMPLE_AUTHENTICATED_USER);
 
         // We want a new instance before every test to ensure clean cache
-        authorizationService = new AuthorizationService(mockAuthenticationService, mockPlatformClientDao, mockScopeDao, mockTokenService);
+        authorizationService = new AuthorizationService(mockAuthenticationService, mockApplicationDao, mockClientDao,
+                mockScopeDao, mockTokenService);
     }
 
     @Test(expected = OAuth2Exception.class)
@@ -104,13 +118,13 @@ public class AuthorizationServiceTest {
                 .filter(oAuth2GrantType -> !oAuth2GrantType.equals(OAuth2GrantType.AUTHORIZATION_CODE))
                 .collect(Collectors.toSet()));
 
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code");
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code", mockUriInfo);
         authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
     }
 
     @Test(expected = OAuth2Exception.class)
     public void generateAuthorizationCode_invalidScope_doesFail() {
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code");
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code", mockUriInfo);
         authorizationRequest.getOAuth2AuthorizationRequest().setScope("bad_scope");
         authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
     }
@@ -120,13 +134,13 @@ public class AuthorizationServiceTest {
         // Change registered URIs of the client
         SAMPLE_PLATFORM_CLIENT.setRedirectUris(getListOfSingleRedirectUri(TestUtils.SAMPLE_SECOND_VALID_REDIRECT_URI));
 
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code");
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code", mockUriInfo);
         authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
     }
 
     @Test
     public void generateAuthorizationCode_codeResponseType_isSuccessful() {
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code");
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code", mockUriInfo);
 
         OAuth2AuthCode oAuth2AuthCode = authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
 
@@ -143,7 +157,7 @@ public class AuthorizationServiceTest {
 
     @Test
     public void generateAuthorizationCode_codeTokenResponseType_isSuccessful() {
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code token", true);
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code token", mockUriInfo, true);
 
         OAuth2AuthCode oAuth2AuthCode = authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
 
@@ -161,7 +175,7 @@ public class AuthorizationServiceTest {
 
     @Test
     public void generateAuthorizationCode_codeIdTokenResponseType_isSuccessful() {
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code id_token", true);
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code id_token", mockUriInfo, true);
 
         OAuth2AuthCode oAuth2AuthCode = authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
 
@@ -179,7 +193,7 @@ public class AuthorizationServiceTest {
 
     @Test
     public void generateAuthorizationCode_codeTokenIdTokenResponseType_isSuccessful() {
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code id_token token", true);
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("code id_token token", mockUriInfo, true);
 
         OAuth2AuthCode oAuth2AuthCode = authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
 
@@ -202,8 +216,8 @@ public class AuthorizationServiceTest {
                 .filter(oAuth2GrantType -> !oAuth2GrantType.equals(OAuth2GrantType.IMPLICIT))
                 .collect(Collectors.toSet()));
 
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("token");
-        authorizationService.getTokenResponseForImplicitGrant(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("token", mockUriInfo);
+        authorizationService.getTokenResponse(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
     }
 
     @Test(expected = OAuth2Exception.class)
@@ -211,14 +225,14 @@ public class AuthorizationServiceTest {
         // Change registered URIs of the client
         SAMPLE_PLATFORM_CLIENT.setRedirectUris(getListOfSingleRedirectUri(TestUtils.SAMPLE_SECOND_VALID_REDIRECT_URI));
 
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("token");
-        authorizationService.getTokenResponseForImplicitGrant(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("token", mockUriInfo);
+        authorizationService.getTokenResponse(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
     }
 
     @Test
     public void getTokenResponseForImplicitGrant_tokenResponseType_isSuccessful() {
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("token");
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForImplicitGrant(authorizationRequest,
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("token", mockUriInfo);
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponse(authorizationRequest,
                 SAMPLE_AUTHENTICATED_USER);
 
         Assert.assertNotNull(oAuth2TokenResponse.getAccessToken());
@@ -234,8 +248,8 @@ public class AuthorizationServiceTest {
 
     @Test
     public void getTokenResponseForImplicitGrant_idTokenResponseType_isSuccessful() {
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("id_token", true);
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForImplicitGrant(authorizationRequest,
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("id_token", mockUriInfo, true);
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponse(authorizationRequest,
                 SAMPLE_AUTHENTICATED_USER);
 
         Assert.assertNotNull(oAuth2TokenResponse.getIdToken());
@@ -248,8 +262,8 @@ public class AuthorizationServiceTest {
 
     @Test
     public void getTokenResponseForImplicitGrant_tokenIdTokenResponseType_isSuccessful() {
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("id_token token", true);
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForImplicitGrant(authorizationRequest,
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest("id_token token", mockUriInfo, true);
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponse(authorizationRequest,
                 SAMPLE_AUTHENTICATED_USER);
 
         Assert.assertNotNull(oAuth2TokenResponse.getAccessToken());
@@ -270,35 +284,40 @@ public class AuthorizationServiceTest {
                 .filter(oAuth2GrantType -> !oAuth2GrantType.equals(OAuth2GrantType.AUTHORIZATION_CODE))
                 .collect(Collectors.toSet()));
 
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.AUTHORIZATION_CODE, mockUriInfo);
         OAuth2AuthCode oAuth2AuthCode = getNewOAuth2AuthCode("code", false);
-        authorizationService.getTokenResponseForAuthorizationCodeGrant(oAuth2AuthCode.getCode(), SAMPlE_BASIC_AUTH_DETAILS,
-                oAuth2AuthCode.getRedirectUri());
+        oAuth2TokenRequest.setCode(oAuth2AuthCode.getCode());
+        oAuth2TokenRequest.setRedirectUri(oAuth2AuthCode.getRedirectUri());
+        authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
     }
 
     @Test(expected = OAuth2Exception.class)
     public void getTokenResponseForAuthorizationCodeGrant_invalidCode_doesFail() {
-        OAuth2AuthCode oAuth2AuthCode = getNewOAuth2AuthCode("code", false);
-
         // Modify code so it's invalid
-        authorizationService.getTokenResponseForAuthorizationCodeGrant(oAuth2AuthCode.getCode() + "test",
-                SAMPlE_BASIC_AUTH_DETAILS, oAuth2AuthCode.getRedirectUri());
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.AUTHORIZATION_CODE, mockUriInfo);
+        OAuth2AuthCode oAuth2AuthCode = getNewOAuth2AuthCode("code", false);
+        oAuth2TokenRequest.setCode(oAuth2AuthCode.getCode() + "test");
+        oAuth2TokenRequest.setRedirectUri(oAuth2AuthCode.getRedirectUri());
+        authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
     }
 
     @Test(expected = OAuth2Exception.class)
     public void getTokenResponseForAuthorizationCodeGrant_invalidRedirectUri_doesFail() {
-        OAuth2AuthCode oAuth2AuthCode = getNewOAuth2AuthCode("code", false);
-
         // Redirect URI must match so use a different URI from the sample
-        authorizationService.getTokenResponseForAuthorizationCodeGrant(oAuth2AuthCode.getCode(), SAMPlE_BASIC_AUTH_DETAILS,
-                "http://thisisadifferenturi.com/");
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.AUTHORIZATION_CODE, mockUriInfo);
+        OAuth2AuthCode oAuth2AuthCode = getNewOAuth2AuthCode("code", false);
+        oAuth2TokenRequest.setCode(oAuth2AuthCode.getCode());
+        oAuth2TokenRequest.setRedirectUri("http://thisisadifferenturi.com/");
+        authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
     }
 
     @Test
     public void getTokenResponseForAuthorizationCodeGrant_isSuccessful() {
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.AUTHORIZATION_CODE, mockUriInfo);
         OAuth2AuthCode oAuth2AuthCode = getNewOAuth2AuthCode("code", false);
-
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForAuthorizationCodeGrant(oAuth2AuthCode.getCode(),
-                SAMPlE_BASIC_AUTH_DETAILS, oAuth2AuthCode.getRedirectUri());
+        oAuth2TokenRequest.setCode(oAuth2AuthCode.getCode());
+        oAuth2TokenRequest.setRedirectUri(oAuth2AuthCode.getRedirectUri());
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
 
         Assert.assertNotNull(oAuth2TokenResponse.getAccessToken());
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getAccessToken()));
@@ -314,10 +333,11 @@ public class AuthorizationServiceTest {
 
     @Test
     public void getTokenResponseForAuthorizationCodeGrant_withIdToken_isSuccessful() {
-        OAuth2AuthCode oAuth2AuthCode = getNewOAuth2AuthCode("code", true);
-
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForAuthorizationCodeGrant(oAuth2AuthCode.getCode(),
-                SAMPlE_BASIC_AUTH_DETAILS, oAuth2AuthCode.getRedirectUri());
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.AUTHORIZATION_CODE, mockUriInfo);
+        OAuth2AuthCode oAuth2AuthCode = getNewOAuth2AuthCode("code,id_token", true);
+        oAuth2TokenRequest.setCode(oAuth2AuthCode.getCode());
+        oAuth2TokenRequest.setRedirectUri(oAuth2AuthCode.getRedirectUri());
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
 
         Assert.assertNotNull(oAuth2TokenResponse.getAccessToken());
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getAccessToken()));
@@ -338,13 +358,14 @@ public class AuthorizationServiceTest {
                 .filter(oAuth2GrantType -> !oAuth2GrantType.equals(OAuth2GrantType.CLIENT_CREDENTIALS))
                 .collect(Collectors.toSet()));
 
-        authorizationService.getTokenResponseForClientCredentialsGrant(SAMPlE_BASIC_AUTH_DETAILS, new HashSet<>());
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.CLIENT_CREDENTIALS, mockUriInfo);
+        authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
     }
 
     @Test
     public void getTokenResponseForClientCredentialsGrant_isSuccessful() {
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForClientCredentialsGrant(SAMPlE_BASIC_AUTH_DETAILS,
-                new HashSet<>());
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.CLIENT_CREDENTIALS, mockUriInfo);
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
 
         Assert.assertNotNull(oAuth2TokenResponse.getAccessToken());
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getAccessToken()));
@@ -363,14 +384,19 @@ public class AuthorizationServiceTest {
                 .filter(oAuth2GrantType -> !oAuth2GrantType.equals(OAuth2GrantType.PASSWORD))
                 .collect(Collectors.toSet()));
 
-        authorizationService.getTokenResponseForPasswordGrant(SAMPlE_BASIC_AUTH_DETAILS, TestUtils.SAMPLE_USER_EMAIL,
-                TestUtils.SAMPLE_USER_PASSWORD, new HashSet<>(), TestUtils.SAMPLE_APPLICATION_HOST);
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.PASSWORD, mockUriInfo);
+        oAuth2TokenRequest.setUsername(TestUtils.SAMPLE_USER_EMAIL);
+        oAuth2TokenRequest.setPassword(TestUtils.SAMPLE_USER_PASSWORD);
+        oAuth2TokenRequest.setScope(TestUtils.SAMPLE_SCOPE);
+        authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
     }
 
     @Test
     public void getTokenResponseForPasswordGrant_isSuccessful() {
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForPasswordGrant(SAMPlE_BASIC_AUTH_DETAILS,
-                TestUtils.SAMPLE_USER_EMAIL, TestUtils.SAMPLE_USER_PASSWORD, new HashSet<>(), TestUtils.SAMPLE_APPLICATION_HOST);
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.PASSWORD, mockUriInfo);
+        oAuth2TokenRequest.setUsername(TestUtils.SAMPLE_USER_EMAIL);
+        oAuth2TokenRequest.setPassword(TestUtils.SAMPLE_USER_PASSWORD);
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
 
         Assert.assertNotNull(oAuth2TokenResponse.getAccessToken());
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getAccessToken()));
@@ -390,13 +416,16 @@ public class AuthorizationServiceTest {
                 .filter(oAuth2GrantType -> !oAuth2GrantType.equals(OAuth2GrantType.REFRESH_TOKEN))
                 .collect(Collectors.toSet()));
 
-        authorizationService.getTokenResponseForRefreshTokenGrant(SAMPlE_BASIC_AUTH_DETAILS, TestUtils.SAMPLE_REFRESH_TOKEN);
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.REFRESH_TOKEN, mockUriInfo);
+        oAuth2TokenRequest.setRefreshToken(TestUtils.SAMPLE_REFRESH_TOKEN);
+        authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
     }
 
     @Test
     public void getTokenResponseForRefreshTokenGrant_isSuccessful() {
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForRefreshTokenGrant(SAMPlE_BASIC_AUTH_DETAILS,
-                TestUtils.SAMPLE_REFRESH_TOKEN);
+        OAuth2TokenRequest oAuth2TokenRequest = TestUtils.createSampleTokenRequest(OAuth2GrantType.REFRESH_TOKEN, mockUriInfo);
+        oAuth2TokenRequest.setRefreshToken(TestUtils.SAMPLE_REFRESH_TOKEN);
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponse(oAuth2TokenRequest, SAMPlE_BASIC_AUTH_DETAILS);
 
         Assert.assertNotNull(oAuth2TokenResponse.getAccessToken());
         Assert.assertTrue(!StringUtils.isEmpty(oAuth2TokenResponse.getAccessToken()));
@@ -411,7 +440,7 @@ public class AuthorizationServiceTest {
     }
 
     private OAuth2AuthCode getNewOAuth2AuthCode(String responseType, boolean isOpenId) {
-        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest(responseType, isOpenId);
+        AuthorizationRequest authorizationRequest = TestUtils.createSampleAuthorizationRequest(responseType, mockUriInfo, isOpenId);
         return authorizationService.generateAuthorizationCode(authorizationRequest, SAMPLE_AUTHENTICATED_USER);
     }
 

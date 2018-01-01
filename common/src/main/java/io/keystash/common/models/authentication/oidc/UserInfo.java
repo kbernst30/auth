@@ -96,13 +96,13 @@ public class UserInfo {
     @Getter @Setter private String website;
 
     /**
-     * The preferred email address of the end-user
+     * The preferred username address of the end-user
      */
-    @JsonProperty("email")
+    @JsonProperty("username")
     @Getter @Setter private String email;
 
     /**
-     * Whether or not the end-user's email address has been verified. True if verified, false otherwise
+     * Whether or not the end-user's username address has been verified. True if verified, false otherwise
      */
     @JsonProperty("email_verified")
     @Getter @Setter private Boolean emailVerified;

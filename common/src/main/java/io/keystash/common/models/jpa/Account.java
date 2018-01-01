@@ -12,6 +12,7 @@ import java.util.Date;
 @ToString
 @EqualsAndHashCode
 @Entity(name = "account")
+@Table(name = "account")
 public class Account implements Serializable {
 
     @Id

@@ -11,6 +11,7 @@ import java.io.Serializable;
 @ToString
 @EqualsAndHashCode
 @Entity(name = "allowed_scope")
+@Table(name = "application_scope")
 public class ApplicationScope implements Serializable {
 
     @Id

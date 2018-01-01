@@ -11,6 +11,7 @@ import java.io.Serializable;
 @ToString
 @EqualsAndHashCode
 @Entity(name = "app_key_config")
+@Table(name = "app_key_config")
 public class AppKeyConfig implements Serializable {
 
     @Id

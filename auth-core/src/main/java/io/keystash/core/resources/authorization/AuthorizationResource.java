@@ -56,8 +56,7 @@ public class AuthorizationResource {
     @GET
     @Path("/authorize")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getOAuth2Authorization(@BeanParam AuthorizationRequest authorizationRequest,
-                                           @Context HttpSession session, @Context UriInfo uriInfo) {
+    public Response getOAuth2Authorization(@BeanParam AuthorizationRequest authorizationRequest, @Context HttpSession session) {
 
         // Validate request parameters
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = authorizationRequest.getOAuth2AuthorizationRequest();
@@ -79,21 +78,22 @@ public class AuthorizationResource {
 
         if (!AuthenticationUtils.isValidSession(session) || isOpenIdConnectLoginPrompt) {
             session.invalidate();
-            return abortWithAuthenticationRequest(uriInfo.getAbsolutePath().toString(), uriInfo.getQueryParameters());
+            return abortWithAuthenticationRequest(authorizationRequest.getRequestAbsoluteUri().toString(),
+                    authorizationRequest.getRequestParameters());
         }
 
         AuthenticatedUser authenticatedUser = AuthenticationUtils.getUserFromSession(session);
 
         if (authorizationResponseTypes.contains(OAuth2ResponseType.CODE)) {
-            return getOAuth2AuthorizationCodeResponse(authorizationRequest, authenticatedUser, session, uriInfo.getBaseUri());
+            return getOAuth2AuthorizationCodeResponse(authorizationRequest, authenticatedUser, session);
         } else {
-            return getOauth2AuthorizationTokenResponse(authorizationRequest, authenticatedUser, session, uriInfo.getBaseUri());
+            return getOauth2AuthorizationTokenResponse(authorizationRequest, authenticatedUser, session);
         }
     }
 
     /**
      * Processes an OAuth2.0 token request to the /token endpoint
-     * @param oAuth2TokenRequest A valid OAuth2TokenRequest object
+     * @param tokenRequest A valid OAuth2TokenRequest object
      * @return A valid Response containing a token response object in JSON format
      */
     @POST
@@ -101,28 +101,12 @@ public class AuthorizationResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOAuth2Token(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
-                                   @BeanParam OAuth2TokenRequest oAuth2TokenRequest, @Context UriInfo uriInfo) {
+                                   @BeanParam OAuth2TokenRequest tokenRequest) {
 
         BasicAuthorizationDetails authorizationDetails = BasicAuthorizationDetails.fromHeaderString(authorizationHeader);
-        Validations.validateOAuth2TokenRequest(oAuth2TokenRequest, authorizationDetails);
+        Validations.validateOAuth2TokenRequest(tokenRequest, authorizationDetails);
 
-        OAuth2TokenResponse tokenResponse = null;
-        Set<String> requestedScopes = AuthorizationUtils.getScopes(oAuth2TokenRequest.getScope());
-
-        if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.AUTHORIZATION_CODE) {
-            tokenResponse = authorizationService.getTokenResponseForAuthorizationCodeGrant(oAuth2TokenRequest.getCode(),
-                    authorizationDetails, oAuth2TokenRequest.getRedirectUri());
-
-        } else if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.CLIENT_CREDENTIALS) {
-            tokenResponse = authorizationService.getTokenResponseForClientCredentialsGrant(authorizationDetails, requestedScopes);
-
-        } else if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.PASSWORD) {
-            tokenResponse = authorizationService.getTokenResponseForPasswordGrant(authorizationDetails,
-                    oAuth2TokenRequest.getUsername(), oAuth2TokenRequest.getPassword(), requestedScopes, uriInfo.getBaseUri().getHost());
-
-        } else if (oAuth2TokenRequest.getGrantType() == OAuth2GrantType.REFRESH_TOKEN) {
-            tokenResponse = authorizationService.getTokenResponseForRefreshTokenGrant(authorizationDetails, oAuth2TokenRequest.getRefreshToken());
-        }
+        OAuth2TokenResponse tokenResponse = authorizationService.getTokenResponse(tokenRequest, authorizationDetails);
 
         // We should never get here as validations would've ensured response type value
         if (tokenResponse == null) {
@@ -133,7 +117,7 @@ public class AuthorizationResource {
     }
 
     private Response getOAuth2AuthorizationCodeResponse(AuthorizationRequest authorizationRequest, AuthenticatedUser authenticatedUser,
-                                                        HttpSession session, URI baseUri) throws AuthorizationException {
+                                                        HttpSession session) throws AuthorizationException {
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = authorizationRequest.getOAuth2AuthorizationRequest();
         OAuth2AuthCode authCode = authorizationService.generateAuthorizationCode(authorizationRequest, authenticatedUser);
@@ -144,7 +128,8 @@ public class AuthorizationResource {
 
         String sessionState = null;
         if (!StringUtils.isEmpty(session.getId())) {
-            sessionState = AuthenticationUtils.getSessionState(oAuth2AuthorizationRequest.getClientId(), baseUri.toString(), session.getId());
+            String baseUri = authorizationRequest.getRequestBaseUri().toString();
+            sessionState = AuthenticationUtils.getSessionState(oAuth2AuthorizationRequest.getClientId(), baseUri, session.getId());
         }
 
         URI requestedUri = URI.create(oAuth2AuthorizationRequest.getRedirectUri());
@@ -191,16 +176,18 @@ public class AuthorizationResource {
     }
 
     private Response getOauth2AuthorizationTokenResponse(AuthorizationRequest authorizationRequest, AuthenticatedUser authenticatedUser,
-                                                         HttpSession session, URI baseUri) throws AuthorizationException {
+                                                         HttpSession session) throws AuthorizationException {
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = authorizationRequest.getOAuth2AuthorizationRequest();
-        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponseForImplicitGrant(authorizationRequest,
+        OAuth2TokenResponse oAuth2TokenResponse = authorizationService.getTokenResponse(authorizationRequest,
                 authenticatedUser);
 
         String responseFragment = oAuth2TokenResponse.getAsUrlEncodedFormParams();
         if (!StringUtils.isEmpty(session.getId())) {
             try {
-                String sessionState = AuthenticationUtils.getSessionState(oAuth2AuthorizationRequest.getClientId(), baseUri.toString(), session.getId());
+                String sessionState = AuthenticationUtils.getSessionState(oAuth2AuthorizationRequest.getClientId(),
+                        authorizationRequest.getRequestBaseUri().toString(), session.getId());
+
                 responseFragment = responseFragment + "&session_state=" + (new URLCodec()).encode(sessionState);
             } catch (EncoderException e) {
                 log.warn("Unable to encode sessionState for response fragment", e);
